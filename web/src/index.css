@@ -1,3 +1,59 @@
+@import './styles/animations.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Self-hosted font stubs — files land in /public/fonts/ later.
+   Until then, the fallback (Georgia/serif) renders. */
+@font-face {
+  font-family: 'Alfa Slab One';
+  src: url('/fonts/AlfaSlabOne-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitter';
+  src: url('/fonts/Bitter-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitter';
+  src: url('/fonts/Bitter-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitter';
+  src: url('/fonts/Bitter-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+html,
+body {
+  background-color: #F5F5DC; /* zine.cream */
+  color: #1A1A1A;            /* never pure black */
+  font-family: 'Bitter', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Global grain overlay — SVG feTurbulence, no PNG. Section 13.4 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.08;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
