@@ -7,6 +7,7 @@ import { eventsRouter } from './routes/events';
 import { musicbrainzRouter } from './routes/musicbrainz';
 import { lyricsRouter } from './routes/lyrics';
 import { votesRouter } from './routes/votes';
+import { moderationRouter } from './routes/moderation';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -24,6 +25,7 @@ app.use('/events', eventsRouter);
 app.use('/mb', musicbrainzRouter);
 app.use('/lyrics', lyricsRouter);
 app.use('/votes', votesRouter);
+app.use('/moderation', moderationRouter);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {

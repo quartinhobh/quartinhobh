@@ -5,13 +5,19 @@ import type { ChatMessage as ChatMessageType } from '@/types';
 
 export interface ChatRoomProps {
   messages: Array<ChatMessageType & { id: string }>;
+  canModerate?: boolean;
+  onDeleteMessage?: (messageId: string, reason?: string) => Promise<void> | void;
 }
 
 /**
  * ChatRoom — scrollable message list wrapped in a cream ZineFrame.
  * Auto-scrolls to bottom when a new message arrives.
  */
-export const ChatRoom: React.FC<ChatRoomProps> = ({ messages }) => {
+export const ChatRoom: React.FC<ChatRoomProps> = ({
+  messages,
+  canModerate = false,
+  onDeleteMessage,
+}) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -26,7 +32,14 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ messages }) => {
             Sem mensagens ainda.
           </p>
         ) : (
-          messages.map((m) => <ChatMessage key={m.id} message={m} />)
+          messages.map((m) => (
+            <ChatMessage
+              key={m.id}
+              message={m}
+              canModerate={canModerate}
+              onDelete={onDeleteMessage}
+            />
+          ))
         )}
         <div ref={bottomRef} />
       </div>

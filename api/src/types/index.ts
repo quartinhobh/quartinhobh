@@ -119,7 +119,7 @@ export interface LyricsCache {
 export interface Ban {
   userId: string;
   bannedBy: string;
-  reason: string;
+  reason: string | null;
   createdAt: number;
   expiresAt: number | null;
 }

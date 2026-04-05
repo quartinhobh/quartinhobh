@@ -1,5 +1,7 @@
 import type {
+  Ban,
   Event,
+  ModerationLog,
   MusicBrainzRelease,
   MusicBrainzTrack,
   UserVote,
@@ -128,6 +130,81 @@ export async function postVote(
   });
   if (!res.ok) throw new Error(`POST /votes/${eventId} failed: ${res.status}`);
   return (await res.json()) as VoteTallies;
+}
+
+// ── P3-F Moderation ────────────────────────────────────────────────
+
+export async function deleteChatMessage(
+  eventId: string,
+  messageId: string,
+  idToken: string,
+  reason?: string,
+): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/moderation/chat/${encodeURIComponent(eventId)}/delete`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ messageId, reason }),
+    },
+  );
+  if (!res.ok) throw new Error(`POST moderation/delete failed: ${res.status}`);
+}
+
+export async function banUser(
+  userId: string,
+  idToken: string,
+  eventId?: string,
+  reason?: string,
+): Promise<Ban> {
+  const res = await fetch(`${API_URL}/moderation/ban`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ userId, eventId, reason }),
+  });
+  if (!res.ok) throw new Error(`POST moderation/ban failed: ${res.status}`);
+  const body = (await res.json()) as { ban: Ban };
+  return body.ban;
+}
+
+export async function unbanUser(
+  userId: string,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/moderation/ban/${encodeURIComponent(userId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${idToken}` },
+    },
+  );
+  if (!res.ok) throw new Error(`DELETE moderation/ban failed: ${res.status}`);
+}
+
+export async function fetchBans(idToken: string): Promise<Ban[]> {
+  const res = await fetch(`${API_URL}/moderation/bans`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET moderation/bans failed: ${res.status}`);
+  const body = (await res.json()) as { bans: Ban[] };
+  return body.bans;
+}
+
+export async function fetchModerationLogs(
+  idToken: string,
+): Promise<ModerationLog[]> {
+  const res = await fetch(`${API_URL}/moderation/logs`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET moderation/logs failed: ${res.status}`);
+  const body = (await res.json()) as { logs: ModerationLog[] };
+  return body.logs;
 }
 
 export async function fetchMusicBrainzTracks(
