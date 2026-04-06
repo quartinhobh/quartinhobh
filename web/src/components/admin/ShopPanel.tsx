@@ -59,6 +59,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [pix, setPix] = useState<PixConfig>({ key: '', beneficiary: '', city: '' });
   const [loading, setLoading] = useState(true);
+  const [pixSaved, setPixSaved] = useState(false);
 
   // New product form
   const [emoji, setEmoji] = useState('');
@@ -90,7 +91,8 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
     const token = await getToken();
     if (!token) return;
     await updatePixConfig(pix, token);
-    alert('PIX salvo!');
+    setPixSaved(true);
+    setTimeout(() => setPixSaved(false), 3000);
   }
 
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -163,6 +165,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
             className={inputClass}
           />
           <Button onClick={() => void savePix()}>salvar PIX</Button>
+          {pixSaved && <span className="font-body text-sm text-green-700">Pix Salvo</span>}
         </div>
       </ZineFrame>}
 

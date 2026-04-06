@@ -6,6 +6,10 @@ Target stack:
 - **API (api/)** → Koyeb (Docker or buildpacks)
 - **Firebase services** → Auth + Firestore + Realtime DB + Storage
 
+```bash
+  git tag v1.0.0 && git push --tags
+```
+
 ---
 
 ## 1. Firebase project setup (one-time)

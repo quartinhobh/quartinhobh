@@ -123,9 +123,16 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
   async function handleDelete(id: string): Promise<void> {
     const token = await resolveToken(idToken);
-    if (!token) return;
-    await apiDeleteEvent(id, token);
-    await refresh();
+    if (!token) {
+      alert('Sessão expirada. Faça login novamente.');
+      return;
+    }
+    try {
+      await apiDeleteEvent(id, token);
+      await refresh();
+    } catch (err) {
+      alert(`Erro ao apagar evento: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   if (creating) {
