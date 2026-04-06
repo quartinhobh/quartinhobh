@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface CacheEntry<T> {
   data: T;
@@ -15,47 +16,55 @@ interface ApiCacheState {
 
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 
-export const useApiCache = create<ApiCacheState>((set, get) => ({
-  cache: {},
+export const useApiCache = create<ApiCacheState>()(
+  persist(
+    (set, get) => ({
+      cache: {},
 
-  get: <T>(key: string, ttl: number = DEFAULT_TTL): T | null => {
-    const entry = get().cache[key];
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp > ttl) {
-      set((s) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [key]: _removed, ...rest } = s.cache;
-        return { cache: rest };
-      });
-      return null;
-    }
-    return entry.data as T;
-  },
-
-  set: <T>(key: string, data: T) => {
-    set((s) => ({
-      cache: {
-        ...s.cache,
-        [key]: { data, timestamp: Date.now() },
+      get: <T>(key: string, ttl: number = DEFAULT_TTL): T | null => {
+        const entry = get().cache[key];
+        if (!entry) return null;
+        if (Date.now() - entry.timestamp > ttl) {
+          set((s) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { [key]: _removed, ...rest } = s.cache;
+            return { cache: rest };
+          });
+          return null;
+        }
+        return entry.data as T;
       },
-    }));
-  },
 
-  invalidate: (key: string) => {
-    set((s) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { [key]: _removed, ...rest } = s.cache;
-      return { cache: rest };
-    });
-  },
+      set: <T>(key: string, data: T) => {
+        set((s) => ({
+          cache: {
+            ...s.cache,
+            [key]: { data, timestamp: Date.now() },
+          },
+        }));
+      },
 
-  invalidatePrefix: (prefix: string) => {
-    set((s) => {
-      const next = { ...s.cache };
-      for (const key of Object.keys(next)) {
-        if (key.startsWith(prefix)) delete next[key];
-      }
-      return { cache: next };
-    });
-  },
-}));
+      invalidate: (key: string) => {
+        set((s) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [key]: _removed, ...rest } = s.cache;
+          return { cache: rest };
+        });
+      },
+
+      invalidatePrefix: (prefix: string) => {
+        set((s) => {
+          const next = { ...s.cache };
+          for (const key of Object.keys(next)) {
+            if (key.startsWith(prefix)) delete next[key];
+          }
+          return { cache: next };
+        });
+      },
+    }),
+    {
+      name: 'quartinho:api-cache',
+      partialize: (s) => ({ cache: s.cache }),
+    },
+  ),
+);
