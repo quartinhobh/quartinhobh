@@ -5,7 +5,6 @@ import { useVotes } from '@/hooks/useVotes';
 import { useAuth } from '@/hooks/useAuth';
 import { AlbumDisplay } from '@/components/events/AlbumDisplay';
 import { TrackList } from '@/components/events/TrackList';
-import { VotePanel } from '@/components/voting/VotePanel';
 import ZineFrame from '@/components/common/ZineFrame';
 
 /** Days before the event date at which the location becomes visible. */
@@ -146,21 +145,18 @@ export const Listen: React.FC = () => {
         </div>
       )}
 
-      {/* Tracks + voting (live only) */}
+      {/* Tracks — live events get inline emoji voting */}
       {isLive && (
-        <>
-          <TrackList tracks={tracks} artistCredit={album?.artistCredit} />
-          {idToken ? (
-            <VotePanel
-              tracks={tracks}
-              userVote={userVote}
-              onSubmit={submitVote}
-            />
-          ) : null}
-        </>
+        <TrackList
+          tracks={tracks}
+          artistCredit={album?.artistCredit}
+          canVote={!!idToken}
+          userVote={userVote}
+          onVote={submitVote}
+        />
       )}
 
-      {/* Upcoming: show tracklist preview but no voting */}
+      {/* Upcoming: tracklist preview, no voting */}
       {isUpcoming && tracks.length > 0 && (
         <TrackList tracks={tracks} artistCredit={album?.artistCredit} />
       )}

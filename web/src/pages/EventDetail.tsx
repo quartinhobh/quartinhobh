@@ -86,45 +86,43 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
       <TrackList tracks={album?.tracks ?? []} artistCredit={album?.artistCredit} />
       <VoteResults tallies={tallies} tracks={album?.tracks ?? []} />
 
-      <ZineFrame bg="periwinkle" borderColor="cream">
-        <h2 className="font-display text-2xl text-zine-cream mb-3">Fotos</h2>
-        <div
-          role="tablist"
-          aria-label="photo-categories"
-          className="flex gap-2 mb-3"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'category1'}
-            aria-label="tab-category1"
-            onClick={() => setTab('category1')}
-            className={`font-body px-3 py-1 border-4 border-zine-cream ${
-              tab === 'category1'
-                ? 'bg-zine-burntYellow text-zine-cream'
-                : 'bg-zine-periwinkle text-zine-cream'
-            }`}
+      {photos.length > 0 && (
+        <ZineFrame bg="periwinkle" borderColor="cream">
+          <h2 className="font-display text-2xl text-zine-cream mb-3">Fotos</h2>
+          <div
+            role="tablist"
+            aria-label="photo-categories"
+            className="flex gap-2 mb-3"
           >
-            Fotos do evento
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'category2'}
-            aria-label="tab-category2"
-            onClick={() => setTab('category2')}
-            className={`font-body px-3 py-1 border-4 border-zine-cream ${
-              tab === 'category2'
-                ? 'bg-zine-burntYellow text-zine-cream'
-                : 'bg-zine-periwinkle text-zine-cream'
-            }`}
-          >
-            Playlist
-          </button>
-        </div>
-        {visible.length === 0 ? (
-          <p className="font-body text-zine-cream italic">Sem fotos.</p>
-        ) : (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'category1'}
+              aria-label="tab-category1"
+              onClick={() => setTab('category1')}
+              className={`font-body px-3 py-1 border-4 border-zine-cream ${
+                tab === 'category1'
+                  ? 'bg-zine-burntYellow text-zine-cream'
+                  : 'bg-zine-periwinkle text-zine-cream'
+              }`}
+            >
+              Fotos do evento
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'category2'}
+              aria-label="tab-category2"
+              onClick={() => setTab('category2')}
+              className={`font-body px-3 py-1 border-4 border-zine-cream ${
+                tab === 'category2'
+                  ? 'bg-zine-burntYellow text-zine-cream'
+                  : 'bg-zine-periwinkle text-zine-cream'
+              }`}
+            >
+              Playlist
+            </button>
+          </div>
           <div
             aria-label="photo-mosaic"
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
@@ -138,8 +136,8 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
               />
             ))}
           </div>
-        )}
-      </ZineFrame>
+        </ZineFrame>
+      )}
     </div>
   );
 };

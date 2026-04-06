@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { ZineFrame } from '@/components/common/ZineFrame';
 import { LyricsDisplay } from '@/components/events/LyricsDisplay';
 import { useLyrics } from '@/hooks/useLyrics';
-import type { MusicBrainzTrack } from '@/types';
+import type { MusicBrainzTrack, UserVote } from '@/types';
 
 export interface TrackListProps {
   tracks: MusicBrainzTrack[];
   artistCredit?: string | null;
+  /** When provided, enables inline voting with emoji toggles. */
+  userVote?: UserVote | null;
+  onVote?: (favoriteTrackId: string, leastLikedTrackId: string) => Promise<void>;
+  canVote?: boolean;
 }
 
 function formatDuration(ms: number): string {
@@ -22,38 +26,134 @@ function TrackLyrics({ track, artistCredit }: { track: MusicBrainzTrack; artistC
   return <LyricsDisplay lyrics={lyrics} loading={loading} />;
 }
 
-export const TrackList: React.FC<TrackListProps> = ({ tracks, artistCredit }) => {
+export const TrackList: React.FC<TrackListProps> = ({
+  tracks,
+  artistCredit,
+  userVote,
+  onVote,
+  canVote = false,
+}) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [favorite, setFavorite] = useState<string | null>(userVote?.favoriteTrackId ?? null);
+  const [least, setLeast] = useState<string | null>(userVote?.leastLikedTrackId ?? null);
+  const [editing, setEditing] = useState(!userVote);
+  const [submitting, setSubmitting] = useState(false);
+
+  const votingEnabled = canVote && !!onVote;
+
+  async function trySubmit(fav: string | null, lst: string | null) {
+    if (!fav || !lst || fav === lst || !onVote) return;
+    setSubmitting(true);
+    try {
+      await onVote(fav, lst);
+      setEditing(false);
+    } catch {
+      // keep editing open on error
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function toggleFavorite(trackId: string) {
+    if (!editing || submitting) return;
+    const next = favorite === trackId ? null : trackId;
+    // If this track was the least, clear least
+    const nextLeast = least === trackId ? null : least;
+    setFavorite(next);
+    setLeast(nextLeast);
+    void trySubmit(next, nextLeast);
+  }
+
+  function toggleLeast(trackId: string) {
+    if (!editing || submitting) return;
+    const next = least === trackId ? null : trackId;
+    const nextFav = favorite === trackId ? null : favorite;
+    setLeast(next);
+    setFavorite(nextFav);
+    void trySubmit(nextFav, next);
+  }
 
   return (
     <ZineFrame bg="cream" borderColor="burntYellow">
+      {/* Already voted banner */}
+      {votingEnabled && userVote && !editing && (
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-zine-burntYellow/30">
+          <span className="font-body text-sm text-zine-burntOrange dark:text-zine-cream">
+            ✓ voto registrado
+          </span>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="font-body text-sm text-zine-burntYellow underline font-bold"
+          >
+            editar voto
+          </button>
+        </div>
+      )}
+
       <ol className="font-body space-y-1" aria-label="tracks">
         {tracks.map((t) => {
           const isOpen = expandedId === t.id;
+          const isFav = favorite === t.id;
+          const isLeast = least === t.id;
+
           return (
             <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => setExpandedId(isOpen ? null : t.id)}
-                className="w-full flex items-baseline gap-3 py-1 hover:bg-zine-mint/20 dark:hover:bg-zine-mint-dark/30 rounded px-1 text-left"
-              >
-                <span className="font-display text-zine-burntYellow w-8 text-right shrink-0">
-                  {t.position}
-                </span>
-                <span className="flex-1 text-zine-burntOrange dark:text-zine-cream">
-                  {t.title}
-                </span>
-                {t.length ? (
-                  <span className="text-zine-burntYellow text-sm shrink-0">
-                    {formatDuration(t.length)}
+              <div className="flex items-center gap-2 py-1 px-1">
+                {/* Track info — click to show lyrics */}
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(isOpen ? null : t.id)}
+                  className="flex-1 flex items-baseline gap-3 hover:bg-zine-mint/20 dark:hover:bg-zine-mint-dark/30 rounded text-left min-w-0"
+                >
+                  <span className="font-display text-zine-burntYellow w-6 text-right shrink-0 text-sm">
+                    {t.position}
                   </span>
-                ) : null}
-                <span className="text-zine-burntOrange/50 dark:text-zine-cream/50 text-xs shrink-0">
-                  {isOpen ? '▲' : '♪'}
-                </span>
-              </button>
+                  <span className="flex-1 text-zine-burntOrange dark:text-zine-cream truncate">
+                    {t.title}
+                  </span>
+                  {t.length ? (
+                    <span className="text-zine-burntYellow text-xs shrink-0">
+                      {formatDuration(t.length)}
+                    </span>
+                  ) : null}
+                </button>
+
+                {/* Voting emojis */}
+                {votingEnabled && (
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(t.id)}
+                      disabled={!editing || submitting}
+                      title="favorita"
+                      className={[
+                        'text-lg leading-none transition-transform',
+                        isFav ? 'scale-125' : 'opacity-40 hover:opacity-80',
+                        !editing ? 'cursor-default' : '',
+                      ].join(' ')}
+                    >
+                      {isFav ? '❤️' : '🤍'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLeast(t.id)}
+                      disabled={!editing || submitting}
+                      title="menos gostei"
+                      className={[
+                        'text-lg leading-none transition-transform',
+                        isLeast ? 'scale-125' : 'opacity-40 hover:opacity-80',
+                        !editing ? 'cursor-default' : '',
+                      ].join(' ')}
+                    >
+                      {isLeast ? '💀' : '☠️'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {isOpen && (
-                <div className="mt-1 mb-2">
+                <div className="mt-1 mb-2 ml-9">
                   <TrackLyrics track={t} artistCredit={artistCredit ?? null} />
                 </div>
               )}
@@ -61,6 +161,12 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, artistCredit }) =>
           );
         })}
       </ol>
+
+      {submitting && (
+        <p className="font-body text-sm text-zine-burntOrange/60 text-center mt-2">
+          enviando voto…
+        </p>
+      )}
     </ZineFrame>
   );
 };
