@@ -4,6 +4,7 @@
 import { adminDb } from '../config/firebase';
 import type { Event, EventAlbumSnapshot, EventCreatePayload, EventStatus } from '../types';
 import { fetchAlbum } from './musicbrainzService';
+import { generateBlurPlaceholder } from './blurPlaceholder';
 
 const EVENTS = 'events';
 
@@ -45,10 +46,13 @@ export async function createEvent(
   if (payload.mbAlbumId) {
     try {
       const mb = await fetchAlbum(payload.mbAlbumId);
+      const coverUrl = `https://coverartarchive.org/release/${mb.id}/front-250`;
+      const coverBlurDataUrl = await generateBlurPlaceholder(coverUrl);
       album = {
         albumTitle: mb.title,
         artistCredit: mb.artistCredit,
-        coverUrl: `https://coverartarchive.org/release/${mb.id}/front-250`,
+        coverUrl,
+        coverBlurDataUrl,
         tracks: mb.tracks,
       };
     } catch {

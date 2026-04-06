@@ -161,6 +161,16 @@ export const Listen: React.FC = () => {
         <TrackList tracks={tracks} artistCredit={album?.artistCredit} />
       )}
 
+      {/* Chat link — live events only */}
+      {isLive && (
+        <Link
+          to={`/chat/${event.id}`}
+          className="font-body font-bold text-center bg-zine-burntYellow dark:bg-zine-burntYellow-bright text-zine-cream dark:text-zine-surface-dark px-4 py-3 border-4 border-zine-cream dark:border-zine-cream/30 hover:bg-zine-burntOrange block"
+        >
+          💬 entrar no chat ao vivo
+        </Link>
+      )}
+
       {/* Link to past events */}
       <Link
         to="/archive"

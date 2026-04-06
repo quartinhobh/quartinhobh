@@ -42,6 +42,7 @@ export interface EventAlbumSnapshot {
   albumTitle: string;
   artistCredit: string;
   coverUrl: string | null;
+  coverBlurDataUrl: string | null;
   tracks: MusicBrainzTrack[];
 }
 
