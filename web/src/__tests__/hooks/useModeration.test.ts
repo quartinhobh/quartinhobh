@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useModeration } from '@/hooks/useModeration';
+import { useApiCache } from '@/store/apiCache';
 
 type FetchCall = { ok?: boolean; status?: number; body: unknown };
 
@@ -21,6 +22,7 @@ function queueFetch(responses: FetchCall[]): ReturnType<typeof vi.fn> {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  useApiCache.getState().cache = {};
 });
 afterEach(() => {
   vi.restoreAllMocks();

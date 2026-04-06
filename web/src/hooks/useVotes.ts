@@ -70,6 +70,17 @@ function applyOptimistic(
 
 const VOTES_TTL = 30 * 1000; // 30 seconds
 
+async function fetchVotesData(
+  eventId: string,
+  idToken: string | null,
+): Promise<VotesCacheData> {
+  const [t, v] = await Promise.all([
+    fetchTallies(eventId),
+    fetchUserVote(eventId, idToken),
+  ]);
+  return { tallies: t, userVote: v };
+}
+
 export function useVotes(
   eventId: string | null,
   idToken: string | null,
@@ -78,43 +89,27 @@ export function useVotes(
   const cache = useApiCache();
   const cacheKey = eventId ? `votes:${eventId}` : null;
 
-  const [data, setData] = useState<VotesCacheData | null>(() => {
-    return cacheKey ? cache.get<VotesCacheData>(cacheKey, VOTES_TTL) ?? null : null;
-  });
-  const [loading, setLoading] = useState(!data && !!eventId);
+  const cached = cacheKey ? cache.get<VotesCacheData>(cacheKey, VOTES_TTL) : null;
+  const [data, setData] = useState<VotesCacheData | null>(cached ?? null);
+  const [loading, setLoading] = useState(!cached && !!eventId);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!eventId) {
+    if (!eventId || !cacheKey) {
       setData(null);
       setLoading(false);
       return;
     }
 
-    const cached = cache.get<VotesCacheData>(cacheKey!, VOTES_TTL);
-    if (cached) {
-      setData(cached);
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
-    const run = async (): Promise<void> => {
+    const run = async () => {
       try {
-        const [t, v] = await Promise.all([
-          fetchTallies(eventId),
-          fetchUserVote(eventId, idToken),
-        ]);
+        const result = await fetchVotesData(eventId, idToken);
         if (cancelled) return;
-        const result = { tallies: t, userVote: v };
-        cache.set(cacheKey!, result);
-        if (!cancelled) {
-          setData(result);
-          setLoading(false);
-        }
+        cache.set(cacheKey, result);
+        setData(result);
+        setLoading(false);
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : 'unknown_error');

@@ -10,6 +10,7 @@ import {
   fetchModerationLogs,
   unbanUser as apiUnbanUser,
 } from '@/services/api';
+import { useApiCache } from '@/store/apiCache';
 import type { Ban, ModerationLog } from '@/types';
 
 export interface UseModerationResult {
@@ -26,40 +27,79 @@ export interface UseModerationResult {
   unbanUser: (userId: string) => Promise<void>;
 }
 
+interface ModerationCacheData {
+  bans: Ban[];
+  logs: ModerationLog[];
+}
+
+const MODERATION_TTL = 60 * 1000; // 1 minute
+
+async function fetchModerationData(
+  idToken: string,
+): Promise<ModerationCacheData> {
+  const b = await fetchBans(idToken);
+  let l: ModerationLog[] = [];
+  try {
+    l = await fetchModerationLogs(idToken);
+  } catch {
+    // logs are admin-only; moderator gets 403 — not an error for UI.
+  }
+  return { bans: b, logs: l };
+}
+
 export function useModeration(idToken: string | null): UseModerationResult {
-  const [bans, setBans] = useState<Ban[]>([]);
-  const [logs, setLogs] = useState<ModerationLog[]>([]);
-  const [loading, setLoading] = useState(false);
+  const cache = useApiCache();
+  const cacheKey = 'moderation:bans';
+
+  const cached = cache.get<ModerationCacheData>(cacheKey, MODERATION_TTL);
+  const [data, setData] = useState<ModerationCacheData | null>(cached ?? null);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = useCallback(async (): Promise<void> => {
+  useEffect(() => {
     if (!idToken) {
-      setBans([]);
-      setLogs([]);
+      setData(null);
+      setLoading(false);
       return;
     }
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const result = await fetchModerationData(idToken);
+        if (cancelled) return;
+        cache.set(cacheKey, result);
+        setData(result);
+        setLoading(false);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : 'moderation_fetch_failed');
+        setLoading(false);
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [idToken, cache, cacheKey]);
+
+  const refetch = useCallback(async () => {
+    if (!idToken) return;
+    cache.invalidate(cacheKey);
     setLoading(true);
     setError(null);
     try {
-      const b = await fetchBans(idToken);
-      setBans(b);
-      try {
-        const l = await fetchModerationLogs(idToken);
-        setLogs(l);
-      } catch {
-        // logs are admin-only; moderator gets 403 — not an error for UI.
-        setLogs([]);
-      }
+      const result = await fetchModerationData(idToken);
+      cache.set(cacheKey, result);
+      setData(result);
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'moderation_fetch_failed');
-    } finally {
       setLoading(false);
     }
-  }, [idToken]);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
+  }, [idToken, cache, cacheKey]);
 
   const deleteMessage = useCallback(
     async (eventId: string, messageId: string, reason?: string) => {
@@ -88,5 +128,13 @@ export function useModeration(idToken: string | null): UseModerationResult {
     [idToken, refetch],
   );
 
-  return { bans, logs, loading, error, deleteMessage, banUser, unbanUser };
+  return {
+    bans: data?.bans ?? [],
+    logs: data?.logs ?? [],
+    loading,
+    error,
+    deleteMessage,
+    banUser,
+    unbanUser,
+  };
 }

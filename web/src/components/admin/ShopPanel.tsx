@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -20,15 +20,14 @@ import Button from '@/components/common/Button';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import {
-  fetchProducts,
-  fetchPixConfig,
   updatePixConfig,
   createProduct,
   importProductsCsv,
   deleteShopProduct,
   reorderProducts,
 } from '@/services/api';
-import type { Product, PixConfig } from '@/types';
+import { useShopData } from '@/hooks/useShopData';
+import type { Product } from '@/types';
 
 const inputClass =
   'border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2 focus:outline-none focus:border-zine-burntOrange w-full';
@@ -40,13 +39,11 @@ function formatPrice(c: number): string {
 /** Wait for Firebase Auth to rehydrate, then get token. */
 function getToken(): Promise<string | null> {
   if (auth.currentUser) return auth.currentUser.getIdToken();
-  // Auth hasn't rehydrated from IndexedDB yet — wait for it.
   return new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, (user) => {
       unsub();
       resolve(user ? user.getIdToken() : null);
     });
-    // Timeout after 5s to not hang forever.
     setTimeout(() => { unsub(); resolve(null); }, 5000);
   });
 }
@@ -57,41 +54,20 @@ export interface ShopPanelProps {
 }
 
 export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [pix, setPix] = useState<PixConfig>({ key: '', beneficiary: '', city: '' });
-  const [loading, setLoading] = useState(true);
+  const { products, pix, loading, refresh } = useShopData(null);
+  const [pixLocal, setPixLocal] = useState(pix);
   const [pixSaved, setPixSaved] = useState(false);
 
-  // New product form
   const [emoji, setEmoji] = useState('');
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [price, setPrice] = useState('');
   const [csvText, setCsvText] = useState('');
 
-  async function refresh() {
-    try {
-      const token = await getToken();
-      const [prods, cfg] = await Promise.all([
-        token
-          ? fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}/shop/products/all`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }).then((r) => r.json()).then((b: { products: Product[] }) => b.products)
-          : fetchProducts(),
-        fetchPixConfig(),
-      ]);
-      setProducts(prods ?? []);
-      if (cfg) setPix(cfg);
-    } catch { /* */ }
-    setLoading(false);
-  }
-
-  useEffect(() => { void refresh(); }, []);  
-
   async function savePix() {
     const token = await getToken();
     if (!token) return;
-    await updatePixConfig(pix, token);
+    await updatePixConfig(pixLocal, token);
     setPixSaved(true);
     setTimeout(() => setPixSaved(false), 3000);
   }
@@ -134,7 +110,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
     await refresh();
   }
 
-  if (loading) return <LoadingState />;
+  if (loading && products.length === 0) return <LoadingState />;
 
   const showPix = mode === 'pix' || mode === 'all';
   const showProducts = mode === 'products' || mode === 'all';
@@ -147,22 +123,22 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
         <div className="flex flex-col gap-2">
           <input
             placeholder="Chave PIX (CPF, email, telefone, aleatória)"
-            value={pix.key}
-            onChange={(e) => setPix({ ...pix, key: e.target.value })}
+            value={pixLocal.key}
+            onChange={(e) => setPixLocal({ ...pixLocal, key: e.target.value })}
             className={inputClass}
           />
           <input
             placeholder="Nome beneficiário (max 25)"
             maxLength={25}
-            value={pix.beneficiary}
-            onChange={(e) => setPix({ ...pix, beneficiary: e.target.value })}
+            value={pixLocal.beneficiary}
+            onChange={(e) => setPixLocal({ ...pixLocal, beneficiary: e.target.value })}
             className={inputClass}
           />
           <input
             placeholder="Cidade (max 15)"
             maxLength={15}
-            value={pix.city}
-            onChange={(e) => setPix({ ...pix, city: e.target.value })}
+            value={pixLocal.city}
+            onChange={(e) => setPixLocal({ ...pixLocal, city: e.target.value })}
             className={inputClass}
           />
           <Button onClick={() => void savePix()}>salvar PIX</Button>
@@ -216,7 +192,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
           <SortableProductList
             products={products}
             onReorder={async (reordered) => {
-              setProducts(reordered);
+              await refresh();
               const token = await getToken();
               if (token) {
                 await reorderProducts(reordered.map((p) => p.id), token);
