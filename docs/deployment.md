@@ -92,7 +92,17 @@ Hosting on every push to `main`. Configure the secrets below.
 
 ## 4. GitHub Secrets required
 
-Set these at **Repo → Settings → Secrets and variables → Actions**.
+Mais rápido via CLI:
+
+```bash
+brew install gh
+gh auth login
+cp .github/secrets.env.example .github/secrets.env
+$EDITOR .github/secrets.env   # preenche os valores
+gh secret set -f .github/secrets.env
+```
+
+Ou manualmente em **Repo → Settings → Secrets and variables → Actions**.
 
 | Secret name                | Used by                | Source                                       |
 |----------------------------|------------------------|----------------------------------------------|

@@ -10,6 +10,7 @@ import type {
   PhotoCategory,
   PixConfig,
   Product,
+  User,
   UserRole,
   UserVote,
   VoteTallies,
@@ -467,4 +468,28 @@ export async function deleteShopProduct(id: string, idToken: string): Promise<vo
     headers: { Authorization: `Bearer ${idToken}` },
   });
   if (!res.ok) throw new Error(`DELETE /shop/products/${id} failed: ${res.status}`);
+}
+
+// ── Users (admin) ──────────────────────────────────────────────────
+
+export async function fetchUsers(idToken: string): Promise<User[]> {
+  const res = await fetch(`${API_URL}/users`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /users failed: ${res.status}`);
+  const body = (await res.json()) as { users: User[] };
+  return body.users;
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: UserRole,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/users/${encodeURIComponent(userId)}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw new Error(`PUT /users/${userId}/role failed: ${res.status}`);
 }
