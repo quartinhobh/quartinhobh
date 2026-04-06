@@ -44,7 +44,7 @@ export const Modal: React.FC<ModalProps> = ({
       >
         <ZineFrame bg="cream">
           {title && (
-            <h2 className="font-display text-2xl mb-3" style={{ color: '#1A1A1A' }}>
+            <h2 className="font-display text-2xl mb-3 text-zine-burntOrange">
               {title}
             </h2>
           )}

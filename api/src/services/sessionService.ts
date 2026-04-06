@@ -63,10 +63,20 @@ export async function linkSessionToUser(
     displayName ?? existingSession.guestName ?? 'user';
 
   if (!userSnap.exists) {
+    // Check for a pre-assigned role invite
+    let role: UserRole = 'user';
+    if (email) {
+      const inviteSnap = await adminDb.collection('role_invites').doc(email).get();
+      if (inviteSnap.exists) {
+        const invite = inviteSnap.data() as { role: UserRole };
+        role = invite.role;
+        await adminDb.collection('role_invites').doc(email).delete();
+      }
+    }
     const initialAdminEmail = process.env.INITIAL_ADMIN_EMAIL;
-    const isInitialAdmin =
-      !!initialAdminEmail && !!email && email === initialAdminEmail;
-    const role: UserRole = isInitialAdmin ? 'admin' : 'user';
+    if (role === 'user' && initialAdminEmail && email === initialAdminEmail) {
+      role = 'admin';
+    }
 
     const user: User = {
       id: uid,

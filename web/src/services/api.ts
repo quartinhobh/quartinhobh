@@ -493,3 +493,38 @@ export async function updateUserRole(
   });
   if (!res.ok) throw new Error(`PUT /users/${userId}/role failed: ${res.status}`);
 }
+
+export interface RoleInvite {
+  email: string;
+  role: UserRole;
+}
+
+export async function fetchInvites(idToken: string): Promise<RoleInvite[]> {
+  const res = await fetch(`${API_URL}/users/invites`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /users/invites failed: ${res.status}`);
+  const body = (await res.json()) as { invites: RoleInvite[] };
+  return body.invites;
+}
+
+export async function createInvite(
+  email: string,
+  role: UserRole,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/users/invites`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ email, role }),
+  });
+  if (!res.ok) throw new Error(`POST /users/invites failed: ${res.status}`);
+}
+
+export async function deleteInvite(email: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/users/invites/${encodeURIComponent(email)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /users/invites failed: ${res.status}`);
+}
