@@ -107,7 +107,7 @@ deploy-rules: ## Deploy Firestore/RTDB/Storage security rules
 
 admin: ## Promote email to admin in production: make admin EMAIL=user@example.com
 	@test -n "$(EMAIL)" || (echo "Uso: make admin EMAIL=user@example.com"; exit 1)
-	./scripts/make-admin.sh "$(EMAIL)"
+	bun api/scripts/make-admin.ts "$(EMAIL)"
 
 reset-prod: ## DESTRUCTIVE: wipe all production data (Firestore + instructions for Auth)
 	./scripts/reset-prod.sh

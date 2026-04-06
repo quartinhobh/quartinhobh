@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import ZineFrame from '@/components/common/ZineFrame';
 import {
   BrowserRouter,
   Routes,
@@ -41,10 +42,22 @@ function ArchiveRoute() {
 }
 
 function PageFallback() {
+  const [text, setText] = useState('carregando');
+  useEffect(() => {
+    let i = 0;
+    const str = 'carregando';
+    const id = setInterval(() => {
+      setText(str.split('').map((c, j) => (j % 2 === i % 2 ? c.toUpperCase() : c.toLowerCase())).join(''));
+      i++;
+    }, 200);
+    return () => clearInterval(id);
+  }, []);
   return (
-    <div className="py-10 text-center font-body text-zine-burntOrange">
-      carregando…
-    </div>
+    <ZineFrame bg="mint">
+      <div className="text-center py-8">
+        <h2 className="font-display text-2xl text-zine-cream mb-2">{text}…</h2>
+      </div>
+    </ZineFrame>
   );
 }
 

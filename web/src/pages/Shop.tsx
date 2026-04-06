@@ -88,6 +88,17 @@ export const Shop: React.FC = () => {
   const [pixConfig, setPixConfig] = useState<PixConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [loadingText, setLoadingText] = useState('carregando');
+  useEffect(() => {
+    let i = 0;
+    const str = 'carregando';
+    const id = setInterval(() => {
+      setLoadingText(str.split('').map((c, j) => (j % 2 === i % 2 ? c.toUpperCase() : c.toLowerCase())).join(''));
+      i++;
+    }, 200);
+    return () => clearInterval(id);
+  }, []);
+
   useEffect(() => {
     void Promise.all([fetchProducts(), fetchPixConfig()])
       .then(([prods, pix]) => {
@@ -99,7 +110,15 @@ export const Shop: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <main className="font-body text-zine-burntOrange dark:text-zine-cream p-4">carregando…</main>;
+    return (
+      <main className="p-4">
+        <ZineFrame bg="mint">
+          <div className="text-center py-8">
+            <h2 className="font-display text-2xl text-zine-cream">{loadingText}…</h2>
+          </div>
+        </ZineFrame>
+      </main>
+    );
   }
 
   const hasPix = !!pixConfig?.key;
