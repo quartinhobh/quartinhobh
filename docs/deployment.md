@@ -104,31 +104,49 @@ Set these at **Repo → Settings → Secrets and variables → Actions**.
 
 ---
 
-## 5. First-deployment checklist
+## 5. First admin user (bootstrap)
+
+O primeiro admin é configurado via env var no Render:
+
+1. No Render dashboard → Environment Variables, sete:
+   ```
+   INITIAL_ADMIN_EMAIL=seu-email@gmail.com
+   ```
+2. Abra o app em produção (`teste-qbh.web.app`)
+3. Clique **"entrar"** no header → **"Entrar com Google"**
+4. Logue com o email que configurou acima
+5. O backend detecta automaticamente que seu email = `INITIAL_ADMIN_EMAIL`
+   e seta `role: admin` no Firestore
+6. O botão **"admin"** aparece no header — acesse `/admin`
+7. **IMPORTANTE**: volte ao Render e **remova** a var `INITIAL_ADMIN_EMAIL`.
+   Se não remover, qualquer pessoa que saiba o email pode virar admin.
+
+Para promover outros admins depois: use o Firebase Console → Firestore →
+`users/{uid}` → edite o campo `role` de `'user'` para `'admin'`.
+
+---
+
+## 6. First-deployment checklist
 
 - [ ] Firebase project created, services enabled
 - [ ] Security rules deployed (`firebase deploy --only firestore:rules,...`)
 - [ ] Service account JSON generated and stored locally (not in git)
-- [ ] Koyeb service created, env vars set, service healthy
-- [ ] `INITIAL_ADMIN_EMAIL` set to your email for first login
-- [ ] Log in once via the Google popup — your user doc now has `role: admin`
-- [ ] Remove `INITIAL_ADMIN_EMAIL` from Koyeb (prevents accidental promotion
-      of future users with that same email)
-- [ ] Firebase Hosting configured, `VITE_FIREBASE_CONFIG` + `VITE_API_URL`
-      baked into the prod build
+- [ ] Render service created, env vars set, `/health` returns 200
+- [ ] `INITIAL_ADMIN_EMAIL` set no Render (ver seção 5 acima)
+- [ ] Frontend deployed (`bun run --filter=web build && bunx firebase-tools deploy --only hosting`)
+- [ ] Abra o app, logue com Google, confirme que `/admin` funciona
+- [ ] Remova `INITIAL_ADMIN_EMAIL` do Render
 - [ ] PWA install tested on a real mobile device
-- [ ] `/admin` reachable only when logged in as the admin account
 
 ---
 
-## 6. Rollback
+## 7. Rollback
 
 - **Frontend** — `bunx firebase-tools hosting:clone <site>:live <site>:previous`
   or use the Firebase Hosting dashboard's version history to re-publish a
   previous release.
-- **API** — Koyeb keeps deployment history per service; re-promote the
-  previous deployment from the dashboard. Env vars are versioned along with
-  it.
+- **API** — Render keeps deployment history per service; redeploy a
+  previous version from the Events tab in the dashboard.
 
 ---
 
