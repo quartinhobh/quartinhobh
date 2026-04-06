@@ -33,11 +33,18 @@ bunx firebase-tools login          # Firebase CLI (interativo, abre browser)
  grep '^FIREBASE_PRIVATE_KEY=' api/.env.production | cut -d= -f2- | tr -d '"' | sed 's/\\n/\n/g' | pbcopy    
 
 ### 1.2 Criar bancos de dados
-Cada um precisa ser criado **manualmente** no Console:
 
-| Serviço | Onde | Modo | Região |
+**Firestore** (via CLI):
+```bash
+source .github/secrets.env
+bunx firebase-tools firestore:databases:create --location=southamerica-east1 \
+    --project teste-qbh --token "$FIREBASE_TOKEN"
+```
+
+**Realtime Database + Storage** (manual — CLI não suporta criação inicial):
+
+| Serviço | Console | Modo | Região |
 |---|---|---|---|
-| **Firestore** | Firestore Database → Create database | Production mode | `southamerica-east1` (SP) |
 | **Realtime Database** | Realtime Database → Create database | Locked mode | mais próxima |
 | **Storage** | Storage → Get started | Production mode | mesma região |
 
