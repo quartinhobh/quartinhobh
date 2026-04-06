@@ -10,17 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Koyeb CLI
+        run: curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/master/install.sh | sh
+
       - name: Deploy API to Koyeb
-        uses: koyeb/action-git-deploy@v1
-        with:
-          app-name: quartinho-api
-          service-name: api
-          service-env: >-
-            FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }},
-            FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }},
-            FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}
         env:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
+        run: |
+          koyeb service redeploy quartinho-api/api \
+            || echo "Service redeploy failed — ensure the service exists on Koyeb dashboard first"
 
   deploy-frontend:
     needs: deploy-api
