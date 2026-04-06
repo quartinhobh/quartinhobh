@@ -43,7 +43,7 @@ export function useAuth() {
   }, [setFirebaseUid, setStoreUser]);
 
   async function afterSignIn(result: UserCredential): Promise<void> {
-    signingIn.current = true;
+    // signingIn.current already set to true by the caller BEFORE signInWithPopup
     try {
       const idToken = await result.user.getIdToken();
       try {
@@ -64,11 +64,13 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
+    signingIn.current = true;
     const result = await signInWithPopup(auth, new GoogleAuthProvider());
     await afterSignIn(result);
   };
 
   const signInWithApple = async () => {
+    signingIn.current = true;
     const provider = new OAuthProvider('apple.com');
     provider.addScope('email');
     provider.addScope('name');
@@ -77,11 +79,13 @@ export function useAuth() {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    signingIn.current = true;
     const result = await signInWithEmailAndPassword(auth, email, password);
     await afterSignIn(result);
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
+    signingIn.current = true;
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await afterSignIn(result);
   };

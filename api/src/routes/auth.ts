@@ -35,18 +35,17 @@ authRouter.post(
   '/link',
   requireAuth,
   async (req: Request, res: Response) => {
-    let sessionId =
-      typeof req.body?.sessionId === 'string' ? req.body.sessionId : null;
-    if (!sessionId) {
-      // No guest session yet — create one on the fly so login still works.
-      const session = await createGuestSession();
-      sessionId = session.id;
-    }
     if (!req.user) {
       res.status(401).json({ error: 'unauthenticated' });
       return;
     }
     try {
+      let sessionId =
+        typeof req.body?.sessionId === 'string' ? req.body.sessionId : null;
+      if (!sessionId) {
+        const session = await createGuestSession();
+        sessionId = session.id;
+      }
       const result = await linkSessionToUser(
         sessionId,
         req.user.uid,

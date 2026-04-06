@@ -2,6 +2,7 @@
 # `make up` starts the full stack (emulator + api + web) via Docker Compose.
 # Run `make help` for the list.
 
+SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: help install up down logs seed reset dev api web stop \
         lint typecheck test test-emulators test-all \
