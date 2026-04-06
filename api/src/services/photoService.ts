@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { adminDb } from '../config/firebase';
-import { createR2Client, getR2PublicUrl } from '../config/r2';
+import { createR2Client, getR2PublicUrl, R2_BUCKET } from '../config/r2';
 import type { Photo, PhotoCategory } from '../types';
 
 const EVENT_PHOTOS = 'event_photos';
@@ -40,7 +40,7 @@ export async function uploadPhoto(
   const client = createR2Client();
   await client.send(
     new PutObjectCommand({
-      Bucket: 'quartinho-photos',
+      Bucket: R2_BUCKET,
       Key: objectKey,
       Body: fileBuffer,
       ContentType: mimeType,
@@ -72,14 +72,18 @@ export async function deletePhoto(
   const data = snap.data() as Photo;
 
   try {
-    const objectKey = data.url.split('/').slice(-3).join('/');
-    const client = createR2Client();
-    await client.send(
-      new DeleteObjectCommand({
-        Bucket: 'quartinho-photos',
-        Key: `event_photos/${eventId}/${category}/${photoId}.${objectKey.split('.').pop()}`,
-      }),
-    );
+    const bucketPrefix = `/${R2_BUCKET}/`;
+    const idx = data.url.indexOf(bucketPrefix);
+    const objectKey = idx >= 0 ? data.url.slice(idx + bucketPrefix.length) : null;
+    if (objectKey) {
+      const client = createR2Client();
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: objectKey,
+        }),
+      );
+    }
   } catch {
     // swallow — Firestore doc is the source of truth for the list view.
   }
