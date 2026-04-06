@@ -9,8 +9,9 @@ const ONE_MINUTE_MS = 60 * 1000;
 // can easily trip them. `skip: true` short-circuits the middleware while
 // keeping the same handler shape in production.
 const EMULATOR_MODE =
-  !!process.env.FIRESTORE_EMULATOR_HOST ||
-  !!process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  process.env.NODE_ENV !== 'production' &&
+  (!!process.env.FIRESTORE_EMULATOR_HOST ||
+   !!process.env.FIREBASE_AUTH_EMULATOR_HOST);
 
 const skip = EMULATOR_MODE ? () => true : undefined;
 

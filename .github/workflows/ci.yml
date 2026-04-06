@@ -73,26 +73,42 @@ jobs:
         run: bun add -g firebase-tools
 
       - name: Start emulators in background
-        # Native firebase-tools in CI (no Docker). Firestore listens on 8080
-        # since CI has no competing Python service on that port.
         run: |
           mkdir -p .firebase-data
           firebase emulators:start \
             --only auth,firestore,database,storage \
-            --project=quartinho-dev &
+            --project=quartinho-dev \
+            > /tmp/firebase-emulators.log 2>&1 &
           echo $! > /tmp/emulator.pid
 
-      - name: Wait for emulator hub
+      - name: Wait for emulators (hub + auth + firestore)
         run: |
           for i in {1..60}; do
-            if curl -sf http://localhost:4400/ > /dev/null; then
-              echo "emulator hub ready"
+            HUB_OK=0
+            AUTH_OK=0
+            FS_OK=0
+
+            curl -sf http://localhost:4400/ >/dev/null && HUB_OK=1 || true
+            curl -sf http://127.0.0.1:9099/ >/dev/null && AUTH_OK=1 || true
+            curl -sf http://127.0.0.1:8080/ >/dev/null && FS_OK=1 || true
+
+            if [ "$HUB_OK" = "1" ] && [ "$AUTH_OK" = "1" ] && [ "$FS_OK" = "1" ]; then
+              echo "emulators ready (hub=$HUB_OK auth=$AUTH_OK firestore=$FS_OK)"
               exit 0
             fi
+
             sleep 2
           done
-          echo "emulator did not come up in time"
+
+          echo "emulators did not come up in time"
+          cat /tmp/firebase-emulators.log || true
           exit 1
+
+      - name: Dump emulator logs on failure
+        if: failure()
+        run: |
+          echo "==== firebase emulators log ===="
+          cat /tmp/firebase-emulators.log || true
 
       - name: Run emulator-gated API tests
         env:
@@ -108,5 +124,6 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/emulator.pid ]; then
-            kill "$(cat /tmp/emulator.pid)" || true
+            kill "$(cat /tmp/emulator.pid)" 2>/dev/null || true
           fi
+          pkill -f "firebase emulators" 2>/dev/null || true

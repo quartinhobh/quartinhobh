@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   GoogleAuthProvider,
   OAuthProvider,
@@ -19,14 +19,16 @@ export function useAuth() {
     useSessionStore();
   const [user, setUser] = useState<User | null>(auth.currentUser ?? null);
 
-  // Sync local state + re-hydrate profile on refresh (Firebase Auth persists
-  // the user in IndexedDB but zustand's role/displayName are in localStorage
-  // which may be stale or cleared). When onAuthStateChanged fires with a user
-  // we pull fresh profile from /auth/me.
+  // Guard: when afterSignIn is running, onAuthStateChanged must NOT call
+  // /auth/me — otherwise it races and overwrites role with 'guest' before
+  // postLinkSession has created the user doc.
+  const signingIn = useRef(false);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (next) => {
       setUser(next);
-      if (next) {
+      if (next && !signingIn.current) {
+        // Re-hydrate on page refresh (not during active sign-in).
         setFirebaseUid(next.uid);
         try {
           const idToken = await next.getIdToken();
@@ -40,21 +42,24 @@ export function useAuth() {
     return unsub;
   }, [setFirebaseUid, setStoreUser]);
 
-  /** Shared post-sign-in: link session + pull profile. */
   async function afterSignIn(result: UserCredential): Promise<void> {
-    const idToken = await result.user.getIdToken();
+    signingIn.current = true;
     try {
-      const linked = await postLinkSession(idToken, sessionId);
-      setFirebaseUid(linked.firebaseUid);
-    } catch {
-      // API unreachable (offline, emulator not running) — tolerate.
-      setFirebaseUid(result.user.uid);
-    }
-    try {
-      const me = await fetchCurrentUser(idToken);
-      setStoreUser(me);
-    } catch {
-      // Leave defaults.
+      const idToken = await result.user.getIdToken();
+      try {
+        const linked = await postLinkSession(idToken, sessionId);
+        setFirebaseUid(linked.firebaseUid);
+      } catch {
+        setFirebaseUid(result.user.uid);
+      }
+      try {
+        const me = await fetchCurrentUser(idToken);
+        setStoreUser(me);
+      } catch {
+        // Leave defaults.
+      }
+    } finally {
+      signingIn.current = false;
     }
   }
 
