@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
+import { auth } from '@/services/firebase';
 import { createEvent, updateEvent, searchMusicBrainz, type MbSearchResult } from '@/services/api';
 import { useIdToken } from '@/hooks/useIdToken';
 import type { Event } from '@/types';
@@ -73,7 +74,13 @@ export const EventForm: React.FC<EventFormProps> = ({
   // ── Submit ──────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
-    if (!idToken) { setError('missing_token'); return; }
+    // idToken from hook may still be null if Auth hasn't rehydrated.
+    // Fall back to getting it directly from currentUser.
+    let token = idToken;
+    if (!token && auth.currentUser) {
+      token = await auth.currentUser.getIdToken();
+    }
+    if (!token) { setError('não autenticado — faça login primeiro'); return; }
     setBusy(true);
     setError(null);
     try {
@@ -88,8 +95,8 @@ export const EventForm: React.FC<EventFormProps> = ({
         spotifyPlaylistUrl: spotifyPlaylistUrl || null,
       };
       const saved = mode === 'create'
-        ? await createEvent(payload, idToken)
-        : await updateEvent(initial!.id, payload, idToken);
+        ? await createEvent(payload, token)
+        : await updateEvent(initial!.id, payload, token);
       onSaved?.(saved);
     } catch (err) {
       setError((err as Error).message);
@@ -212,7 +219,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           <p role="alert" className="font-body text-zine-burntOrange">{error}</p>
         )}
 
-        <Button type="submit" disabled={busy || !idToken}>
+        <Button type="submit" disabled={busy}>
           {busy ? 'a guardar…' : mode === 'create' ? 'criar' : 'guardar'}
         </Button>
       </form>

@@ -218,28 +218,37 @@ test.describe('real flows — vote round-trip', () => {
 });
 
 test.describe('real flows — admin event CRUD', () => {
-  test('admin creates an event via the form and sees it in the list', async ({ page }) => {
-    await mockMusicBrainz(page);
+  test('admin searches album, creates event, and sees it in the list', async ({ page }) => {
     await devLoginUi(page, '/admin');
 
-    // Wait for the AdminPanel's EventsTab to hydrate (store role=admin must
-    // propagate and fetchEvents() must resolve before the list renders).
     await expect(page.getByRole('heading', { name: /^eventos$/i })).toBeVisible({
       timeout: 15_000,
     });
     await page.getByRole('button', { name: /novo evento/i }).click();
 
-    const uniqueTitle = `Form Event ${Date.now()}`;
-    // EventForm now uses album search instead of raw mbAlbumId input.
-    // Fill title + date/time fields directly (mbAlbumId can be empty for test).
-    await page.getByLabel('title').fill(uniqueTitle);
+    // Search for a real album via the MusicBrainz search field.
+    await page.getByPlaceholder(/OK Computer/i).fill('Radical Dance Club');
+    // Wait for search results to appear (debounced 400ms + API call).
+    await expect(page.getByText(/Radical Dance/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    // Click the first result to select the album.
+    await page.getByText(/Radical Dance/i).first().click();
+
+    // Verify MBID was populated (text may be truncated in UI).
+    await expect(page.getByText(/MBID selecionado/i)).toBeVisible();
+
+    // Fill remaining fields.
     await page.getByLabel('date').fill(new Date().toISOString().slice(0, 10));
     await page.getByLabel('startTime').fill('20:00');
     await page.getByLabel('endTime').fill('22:00');
 
     await page.getByRole('button', { name: /^criar$/ }).click();
 
-    await expect(page.getByText(uniqueTitle)).toBeVisible({ timeout: 10_000 });
+    // Event appears in the list with the auto-filled title.
+    await expect(page.getByText(/Radical Dance/i).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
 

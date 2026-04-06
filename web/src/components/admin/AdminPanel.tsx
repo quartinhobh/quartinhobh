@@ -6,12 +6,19 @@ import PhotoUpload from '@/components/admin/PhotoUpload';
 import ModerationPanel from '@/components/admin/ModerationPanel';
 import ShopPanel from '@/components/admin/ShopPanel';
 import { useIdToken } from '@/hooks/useIdToken';
+import { auth } from '@/services/firebase';
 import {
   deleteEvent as apiDeleteEvent,
   deletePhoto as apiDeletePhoto,
   fetchEvents,
   fetchPhotos,
 } from '@/services/api';
+
+/** Get token with fallback to auth.currentUser for race-condition safety. */
+async function resolveToken(hookToken: string | null): Promise<string | null> {
+  if (hookToken) return hookToken;
+  return auth.currentUser ? auth.currentUser.getIdToken() : null;
+}
 import type { Event, Photo } from '@/types';
 
 export interface AdminPanelProps {
@@ -115,8 +122,9 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   }, []);
 
   async function handleDelete(id: string): Promise<void> {
-    if (!idToken) return;
-    await apiDeleteEvent(id, idToken);
+    const token = await resolveToken(idToken);
+    if (!token) return;
+    await apiDeleteEvent(id, token);
     await refresh();
   }
 
@@ -205,8 +213,9 @@ const PhotosTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   }, [eventId]);
 
   async function handleDelete(p: Photo): Promise<void> {
-    if (!idToken) return;
-    await apiDeletePhoto(eventId, p.category, p.id, idToken);
+    const token = await resolveToken(idToken);
+    if (!token) return;
+    await apiDeletePhoto(eventId, p.category, p.id, token);
     const fresh = await fetchPhotos(eventId);
     setPhotos(fresh);
   }
