@@ -41,7 +41,7 @@ export const UsersPanel: React.FC = () => {
 
   useEffect(() => {
     void refresh();
-  }, [idToken]);
+  }, [idToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRoleChange(userId: string, role: UserRole): Promise<void> {
     if (!idToken) return;
