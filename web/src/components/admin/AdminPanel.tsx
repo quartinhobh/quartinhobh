@@ -17,7 +17,7 @@ export interface AdminPanelProps {
   idToken: string | null;
 }
 
-type Tab = 'events' | 'photos' | 'moderation' | 'lojinha';
+type Tab = 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix';
 
 /**
  * AdminPanel — three-tab admin dashboard:
@@ -68,12 +68,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ idToken }) => {
         >
           Lojinha
         </Button>
+        <Button
+          role="tab"
+          aria-selected={tab === 'pix'}
+          onClick={() => setTab('pix')}
+          className={tab === 'pix' ? 'ring-4 ring-zine-burntOrange' : ''}
+        >
+          PIX
+        </Button>
       </div>
 
       {tab === 'events' && <EventsTab idToken={idToken} />}
       {tab === 'photos' && <PhotosTab idToken={idToken} />}
       {tab === 'moderation' && <ModerationPanel idToken={idToken} />}
-      {tab === 'lojinha' && <ShopPanel idToken={idToken} />}
+      {tab === 'lojinha' && <ShopPanel idToken={idToken} mode="products" />}
+      {tab === 'pix' && <ShopPanel idToken={idToken} mode="pix" />}
     </div>
   );
 };

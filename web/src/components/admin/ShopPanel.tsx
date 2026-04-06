@@ -20,9 +20,10 @@ function formatPrice(c: number): string {
 
 export interface ShopPanelProps {
   idToken: string | null;
+  mode?: 'products' | 'pix' | 'all';
 }
 
-export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken }) => {
+export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken, mode = 'all' }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [pix, setPix] = useState<PixConfig>({ key: '', beneficiary: '', city: '' });
   const [loading, setLoading] = useState(true);
@@ -79,10 +80,13 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken }) => {
 
   if (loading) return <p className="font-body text-zine-burntOrange">carregando…</p>;
 
+  const showPix = mode === 'pix' || mode === 'all';
+  const showProducts = mode === 'products' || mode === 'all';
+
   return (
     <div className="flex flex-col gap-4">
       {/* PIX Config */}
-      <ZineFrame bg="cream">
+      {showPix && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Configuração PIX</h3>
         <div className="flex flex-col gap-2">
           <input
@@ -107,10 +111,10 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken }) => {
           />
           <Button onClick={() => void savePix()}>salvar PIX</Button>
         </div>
-      </ZineFrame>
+      </ZineFrame>}
 
       {/* Add product */}
-      <ZineFrame bg="cream">
+      {showProducts && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Adicionar produto</h3>
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-[60px_1fr] gap-2">
@@ -121,10 +125,10 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken }) => {
           <input placeholder="Preço (ex: 25,00)" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} />
           <Button onClick={() => void addProduct()}>adicionar</Button>
         </div>
-      </ZineFrame>
+      </ZineFrame>}
 
       {/* CSV import */}
-      <ZineFrame bg="cream">
+      {showProducts && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Importar CSV</h3>
         <p className="font-body text-xs text-zine-burntOrange/60 mb-2">
           Formato: emoji,nome,descrição,preço(centavos) — uma linha por produto
@@ -137,10 +141,10 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken }) => {
           className={inputClass}
         />
         <Button onClick={() => void handleImport()} className="mt-2">importar</Button>
-      </ZineFrame>
+      </ZineFrame>}
 
       {/* Product list */}
-      <ZineFrame bg="cream">
+      {showProducts && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">
           Produtos ({products.length})
         </h3>
@@ -162,7 +166,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken }) => {
             ))}
           </ul>
         )}
-      </ZineFrame>
+      </ZineFrame>}
     </div>
   );
 };
