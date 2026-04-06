@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
+import { LoadingState } from '@/components/common/LoadingState';
 import AlbumDisplay from '@/components/events/AlbumDisplay';
 import TrackList from '@/components/events/TrackList';
 import VoteResults from '@/components/voting/VoteResults';
@@ -71,11 +72,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
   }
 
   if (!event) {
-    return (
-      <ZineFrame bg="cream">
-        <p className="font-body text-zine-burntOrange">carregando…</p>
-      </ZineFrame>
-    );
+    return <LoadingState />;
   }
 
   const visible = photos.filter((p) => p.category === tab);

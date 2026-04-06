@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { LoadingState } from '@/components/common/LoadingState';
 import ZineFrame from '@/components/common/ZineFrame';
 import { fetchProducts, fetchPixConfig } from '@/services/api';
 import type { Product, PixConfig } from '@/types';
@@ -88,17 +89,6 @@ export const Shop: React.FC = () => {
   const [pixConfig, setPixConfig] = useState<PixConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [loadingText, setLoadingText] = useState('carregando');
-  useEffect(() => {
-    let i = 0;
-    const str = 'carregando';
-    const id = setInterval(() => {
-      setLoadingText(str.split('').map((c, j) => (j % 2 === i % 2 ? c.toUpperCase() : c.toLowerCase())).join(''));
-      i++;
-    }, 200);
-    return () => clearInterval(id);
-  }, []);
-
   useEffect(() => {
     void Promise.all([fetchProducts(), fetchPixConfig()])
       .then(([prods, pix]) => {
@@ -110,15 +100,7 @@ export const Shop: React.FC = () => {
   }, []);
 
   if (loading) {
-    return (
-      <main className="p-4">
-        <ZineFrame bg="mint">
-          <div className="text-center py-8">
-            <h2 className="font-display text-2xl text-zine-cream">{loadingText}…</h2>
-          </div>
-        </ZineFrame>
-      </main>
-    );
+    return <LoadingState />;
   }
 
   const hasPix = !!pixConfig?.key;

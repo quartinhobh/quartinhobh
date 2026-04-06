@@ -5,6 +5,7 @@ import { useVotes } from '@/hooks/useVotes';
 import { useAuth } from '@/hooks/useAuth';
 import { AlbumDisplay } from '@/components/events/AlbumDisplay';
 import { TrackList } from '@/components/events/TrackList';
+import { LoadingState } from '@/components/common/LoadingState';
 import ZineFrame from '@/components/common/ZineFrame';
 
 /** Days before the event date at which the location becomes visible. */
@@ -37,7 +38,7 @@ export const Listen: React.FC = () => {
   );
 
   if (loading) {
-    return <main className="font-body text-zine-burntOrange p-4">carregando…</main>;
+    return <LoadingState />;
   }
 
   if (error) {

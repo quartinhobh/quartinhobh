@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import ZineFrame from '@/components/common/ZineFrame';
+import { LoadingState } from '@/components/common/LoadingState';
 import Button from '@/components/common/Button';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/services/firebase';
@@ -133,7 +134,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
     await refresh();
   }
 
-  if (loading) return <p className="font-body text-zine-burntOrange">carregando…</p>;
+  if (loading) return <LoadingState />;
 
   const showPix = mode === 'pix' || mode === 'all';
   const showProducts = mode === 'products' || mode === 'all';

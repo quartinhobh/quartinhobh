@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
+import { LoadingState } from '@/components/common/LoadingState';
 import Button from '@/components/common/Button';
 import { useModeration } from '@/hooks/useModeration';
 import { useIdToken } from '@/hooks/useIdToken';
@@ -57,9 +58,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = () => {
         <h2 className="font-display text-2xl text-zine-burntOrange mb-3">
           Banimentos ativos
         </h2>
-        {loading && (
-          <p className="font-body text-zine-burntOrange/70">carregando…</p>
-        )}
+        {loading && <LoadingState />}
         {error && (
           <p className="font-body text-zine-burntOrange">erro: {error}</p>
         )}
