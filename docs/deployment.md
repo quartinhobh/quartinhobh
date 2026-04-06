@@ -97,12 +97,10 @@ Set these at **Repo → Settings → Secrets and variables → Actions**.
 | Secret name                | Used by                | Source                                       |
 |----------------------------|------------------------|----------------------------------------------|
 | `RENDER_DEPLOY_HOOK`       | `deploy-api` job       | Render → Service → Settings → Deploy Hook     |
-| `FIREBASE_PROJECT_ID`      | `deploy-api`, hosting  | Service account JSON → `project_id`          |
-| `FIREBASE_CLIENT_EMAIL`    | `deploy-api`           | Service account JSON → `client_email`        |
-| `FIREBASE_PRIVATE_KEY`     | `deploy-api`           | Service account JSON → `private_key` (keep `\n`) |
-| `FIREBASE_TOKEN`           | `deploy-frontend`      | `firebase login:ci` or service account JSON contents |
+| `FIREBASE_PROJECT_ID`      | `deploy-frontend`      | Firebase Console → Project Settings           |
+| `FIREBASE_TOKEN`           | `deploy-frontend`      | Run `bunx firebase-tools login:ci` locally    |
 | `VITE_FIREBASE_CONFIG`     | web build              | Firebase web app config as one-line JSON     |
-| `VITE_API_URL`             | web build              | Koyeb service public URL                     |
+| `VITE_API_URL`             | web build              | Render service URL (e.g. `https://xxx.onrender.com`) |
 
 ---
 
