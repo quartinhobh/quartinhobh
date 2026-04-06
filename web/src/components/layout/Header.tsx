@@ -44,6 +44,12 @@ export const Header: React.FC = () => {
             </h1>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              to="/lojinha"
+              className="font-body font-bold text-sm text-zine-cream hover:text-zine-burntYellow"
+            >
+              lojinha
+            </Link>
             <button
               type="button"
               onClick={toggleTheme}

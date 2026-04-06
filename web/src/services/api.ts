@@ -8,6 +8,8 @@ import type {
   MusicBrainzTrack,
   Photo,
   PhotoCategory,
+  PixConfig,
+  Product,
   UserRole,
   UserVote,
   VoteTallies,
@@ -391,4 +393,69 @@ export async function fetchMusicBrainzTracks(
   if (!res.ok) throw new Error(`GET /mb/tracks failed: ${res.status}`);
   const body = (await res.json()) as { tracks: MusicBrainzTrack[] };
   return body.tracks;
+}
+
+// ── Shop / PIX ──────────────────────────────────────────────────────────
+
+export async function fetchProducts(): Promise<Product[]> {
+  const res = await fetch(`${API_URL}/shop/products`);
+  if (!res.ok) throw new Error(`GET /shop/products failed: ${res.status}`);
+  const body = (await res.json()) as { products: Product[] };
+  return body.products;
+}
+
+export async function fetchPixConfig(): Promise<PixConfig | null> {
+  const res = await fetch(`${API_URL}/shop/pix`);
+  if (!res.ok) throw new Error(`GET /shop/pix failed: ${res.status}`);
+  const body = (await res.json()) as { config: PixConfig | null };
+  return body.config;
+}
+
+export async function updatePixConfig(
+  config: PixConfig,
+  idToken: string,
+): Promise<PixConfig> {
+  const res = await fetch(`${API_URL}/shop/pix`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) throw new Error(`PUT /shop/pix failed: ${res.status}`);
+  const body = (await res.json()) as { config: PixConfig };
+  return body.config;
+}
+
+export async function createProduct(
+  data: { emoji: string; name: string; description: string; price: number; imageUrl?: string | null },
+  idToken: string,
+): Promise<Product> {
+  const res = await fetch(`${API_URL}/shop/products`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`POST /shop/products failed: ${res.status}`);
+  const body = (await res.json()) as { product: Product };
+  return body.product;
+}
+
+export async function importProductsCsv(
+  csv: string,
+  idToken: string,
+): Promise<{ imported: number }> {
+  const res = await fetch(`${API_URL}/shop/products/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ csv }),
+  });
+  if (!res.ok) throw new Error(`POST /shop/products/import failed: ${res.status}`);
+  return (await res.json()) as { imported: number };
+}
+
+export async function deleteShopProduct(id: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/shop/products/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /shop/products/${id} failed: ${res.status}`);
 }

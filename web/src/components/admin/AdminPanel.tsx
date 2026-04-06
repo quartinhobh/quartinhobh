@@ -4,6 +4,7 @@ import Button from '@/components/common/Button';
 import EventForm from '@/components/admin/EventForm';
 import PhotoUpload from '@/components/admin/PhotoUpload';
 import ModerationPanel from '@/components/admin/ModerationPanel';
+import ShopPanel from '@/components/admin/ShopPanel';
 import {
   deleteEvent as apiDeleteEvent,
   deletePhoto as apiDeletePhoto,
@@ -16,7 +17,7 @@ export interface AdminPanelProps {
   idToken: string | null;
 }
 
-type Tab = 'events' | 'photos' | 'moderation';
+type Tab = 'events' | 'photos' | 'moderation' | 'lojinha';
 
 /**
  * AdminPanel — three-tab admin dashboard:
@@ -59,11 +60,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ idToken }) => {
         >
           Moderação
         </Button>
+        <Button
+          role="tab"
+          aria-selected={tab === 'lojinha'}
+          onClick={() => setTab('lojinha')}
+          className={tab === 'lojinha' ? 'ring-4 ring-zine-burntOrange' : ''}
+        >
+          Lojinha
+        </Button>
       </div>
 
       {tab === 'events' && <EventsTab idToken={idToken} />}
       {tab === 'photos' && <PhotosTab idToken={idToken} />}
       {tab === 'moderation' && <ModerationPanel idToken={idToken} />}
+      {tab === 'lojinha' && <ShopPanel idToken={idToken} />}
     </div>
   );
 };

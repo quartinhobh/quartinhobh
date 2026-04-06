@@ -198,6 +198,26 @@ export interface MusicBrainzRelease {
   tracks: MusicBrainzTrack[];
 }
 
+// ── Lojinha / PIX ─────────────────────────────────────────────────────
+
+export interface PixConfig {
+  key: string;
+  beneficiary: string;
+  city: string;
+}
+
+export interface Product {
+  id: string;
+  emoji: string;
+  name: string;
+  description: string;
+  price: number; // centavos (R$ 25,00 = 2500)
+  imageUrl: string | null;
+  active: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface ApiResponse<T> {
   data: T;
   error?: string;

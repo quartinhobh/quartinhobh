@@ -154,6 +154,26 @@ export interface EventPhoto {
   createdAt: number;
 }
 
+// ── Lojinha / PIX ─────────────────────────────────────────────────────
+
+export interface PixConfig {
+  key: string;
+  beneficiary: string;
+  city: string;
+}
+
+export interface Product {
+  id: string;
+  emoji: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string | null;
+  active: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // ── P3-G Photos ────────────────────────────────────────────────────────
 
 export type PhotoCategory = 'category1' | 'category2';
