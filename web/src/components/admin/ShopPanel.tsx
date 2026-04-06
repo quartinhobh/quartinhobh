@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import {
   fetchProducts,
@@ -19,8 +20,18 @@ function formatPrice(c: number): string {
   return `R$ ${(c / 100).toFixed(2).replace('.', ',')}`;
 }
 
-async function getToken(): Promise<string | null> {
-  return auth.currentUser ? auth.currentUser.getIdToken() : null;
+/** Wait for Firebase Auth to rehydrate, then get token. */
+function getToken(): Promise<string | null> {
+  if (auth.currentUser) return auth.currentUser.getIdToken();
+  // Auth hasn't rehydrated from IndexedDB yet — wait for it.
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub();
+      resolve(user ? user.getIdToken() : null);
+    });
+    // Timeout after 5s to not hang forever.
+    setTimeout(() => { unsub(); resolve(null); }, 5000);
+  });
 }
 
 export interface ShopPanelProps {
@@ -66,14 +77,27 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
     alert('PIX salvo!');
   }
 
+  const [feedback, setFeedback] = useState<string | null>(null);
+
   async function addProduct() {
+    setFeedback(null);
     const token = await getToken();
-    if (!token || !name.trim()) return;
-    const cents = Math.round(parseFloat(price.replace(',', '.')) * 100);
-    if (cents <= 0 || isNaN(cents)) return;
-    await createProduct({ emoji, name, description: desc, price: cents }, token);
-    setEmoji(''); setName(''); setDesc(''); setPrice('');
-    await refresh();
+    if (!token) { setFeedback('não autenticado — faça login primeiro'); return; }
+    if (!name.trim()) { setFeedback('nome obrigatório'); return; }
+    // Normalize price: accept "25", "25,00", "25.00", "R$ 25,00", "R$25"
+    const cleaned = price.replace(/[R$\s]/gi, '').replace(',', '.').trim();
+    let cents = Math.round(parseFloat(cleaned || '0') * 100);
+    // If user typed raw centavos like "1500" (no decimal), detect: >10000 cents = likely centavos
+    if (cleaned && !cleaned.includes('.') && cents > 10000) cents = Math.round(parseFloat(cleaned));
+    if (!cents || cents <= 0 || isNaN(cents)) { setFeedback('preço inválido (ex: 25,00)'); return; }
+    try {
+      await createProduct({ emoji, name, description: desc, price: cents }, token);
+      setEmoji(''); setName(''); setDesc(''); setPrice('');
+      setFeedback('✓ produto adicionado');
+      await refresh();
+    } catch (err) {
+      setFeedback(`erro: ${(err as Error).message}`);
+    }
   }
 
   async function handleImport() {
@@ -137,6 +161,11 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
           <input placeholder="Descrição" value={desc} onChange={(e) => setDesc(e.target.value)} className={inputClass} />
           <input placeholder="Preço (ex: 25,00)" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} />
           <Button onClick={() => void addProduct()}>adicionar</Button>
+          {feedback && (
+            <p className={`font-body text-sm ${feedback.startsWith('✓') ? 'text-zine-mint-dark' : 'text-zine-burntOrange'}`}>
+              {feedback}
+            </p>
+          )}
         </div>
       </ZineFrame>}
 
