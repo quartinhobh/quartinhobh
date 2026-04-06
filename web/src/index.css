@@ -38,6 +38,30 @@
   font-display: swap;
 }
 
+/* ── Header container query — show brand name when space allows ────────── */
+.header-cq {
+  container-type: inline-size;
+}
+.brand-name {
+  display: block;
+  white-space: nowrap;
+}
+/* Admin mode: more nav items, hide brand earlier */
+.brand-name--admin {
+  display: none;
+}
+@container (min-width: 500px) {
+  .brand-name--admin {
+    display: block;
+  }
+}
+/* Tight space: hide brand for everyone */
+@container (max-width: 380px) {
+  .brand-name {
+    display: none;
+  }
+}
+
 /* ── Light mode (default) ─────────────────────────────────────────────── */
 html,
 body {

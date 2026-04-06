@@ -35,15 +35,18 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="bg-zine-periwinkle dark:bg-zine-periwinkle-dark border-b-4 border-zine-cream dark:border-zine-cream/30">
-        <div className="mx-auto max-w-[640px] px-4 py-3 flex items-center justify-between">
+      <header className="header-cq bg-zine-periwinkle dark:bg-zine-periwinkle-dark border-b-4 border-zine-cream dark:border-zine-cream/30">
+        <div className="mx-auto max-w-[640px] px-4 py-3 flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <img src="/logo.svg" alt="Quartinho" className="h-9 w-9" />
-            <h1 className="font-display text-3xl text-zine-cream tracking-wide hidden sm:block">
+            <img src="/logo.svg" alt="Quartinho" className="h-9 w-9 shrink-0" />
+            <h1
+              className={`brand-name font-display text-zine-cream tracking-wide${isAdminOrMod ? ' brand-name--admin' : ''}`}
+              style={{ fontSize: 'clamp(1rem, 4vw, 1.875rem)' }}
+            >
               Quartinho
             </h1>
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <nav className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={toggleTheme}
