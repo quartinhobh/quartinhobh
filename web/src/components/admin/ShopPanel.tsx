@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
+import { auth } from '@/services/firebase';
 import {
   fetchProducts,
   fetchPixConfig,
@@ -18,12 +19,16 @@ function formatPrice(c: number): string {
   return `R$ ${(c / 100).toFixed(2).replace('.', ',')}`;
 }
 
+async function getToken(): Promise<string | null> {
+  return auth.currentUser ? auth.currentUser.getIdToken() : null;
+}
+
 export interface ShopPanelProps {
   idToken: string | null;
   mode?: 'products' | 'pix' | 'all';
 }
 
-export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken, mode = 'all' }) => {
+export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [pix, setPix] = useState<PixConfig>({ key: '', beneficiary: '', city: '' });
   const [loading, setLoading] = useState(true);
@@ -37,10 +42,13 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken, mode = 'all' }) =
 
   async function refresh() {
     try {
+      const token = await getToken();
       const [prods, cfg] = await Promise.all([
-        idToken ? fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}/shop/products/all`, {
-          headers: { Authorization: `Bearer ${idToken}` },
-        }).then((r) => r.json()).then((b: { products: Product[] }) => b.products) : fetchProducts(),
+        token
+          ? fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}/shop/products/all`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).then((r) => r.json()).then((b: { products: Product[] }) => b.products)
+          : fetchProducts(),
         fetchPixConfig(),
       ]);
       setProducts(prods ?? []);
@@ -49,32 +57,37 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken, mode = 'all' }) =
     setLoading(false);
   }
 
-  useEffect(() => { void refresh(); }, [idToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void refresh(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function savePix() {
-    if (!idToken) return;
-    await updatePixConfig(pix, idToken);
+    const token = await getToken();
+    if (!token) return;
+    await updatePixConfig(pix, token);
+    alert('PIX salvo!');
   }
 
   async function addProduct() {
-    if (!idToken || !name.trim()) return;
+    const token = await getToken();
+    if (!token || !name.trim()) return;
     const cents = Math.round(parseFloat(price.replace(',', '.')) * 100);
     if (cents <= 0 || isNaN(cents)) return;
-    await createProduct({ emoji, name, description: desc, price: cents }, idToken);
+    await createProduct({ emoji, name, description: desc, price: cents }, token);
     setEmoji(''); setName(''); setDesc(''); setPrice('');
     await refresh();
   }
 
   async function handleImport() {
-    if (!idToken || !csvText.trim()) return;
-    await importProductsCsv(csvText, idToken);
+    const token = await getToken();
+    if (!token || !csvText.trim()) return;
+    await importProductsCsv(csvText, token);
     setCsvText('');
     await refresh();
   }
 
   async function handleDelete(id: string) {
-    if (!idToken) return;
-    await deleteShopProduct(id, idToken);
+    const token = await getToken();
+    if (!token) return;
+    await deleteShopProduct(id, token);
     await refresh();
   }
 
@@ -157,8 +170,9 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ idToken, mode = 'all' }) =
                 <div className="flex items-center gap-2 min-w-0">
                   {p.emoji && <span className="text-xl">{p.emoji}</span>}
                   <div className="flex flex-col min-w-0">
-                    <span className="font-display text-zine-burntOrange text-sm truncate">{p.name}</span>
-                    <span className="font-body text-xs text-zine-burntOrange/60">{formatPrice(p.price)}</span>
+                    <span className="font-display text-zine-burntOrange dark:text-zine-cream text-sm truncate">{p.name}</span>
+                    {p.description && <span className="font-body text-xs text-zine-burntOrange/60 dark:text-zine-cream/60 truncate">{p.description}</span>}
+                    <span className="font-body text-xs text-zine-burntYellow">{formatPrice(p.price)}</span>
                   </div>
                 </div>
                 <Button onClick={() => void handleDelete(p.id)}>apagar</Button>

@@ -26,8 +26,19 @@ type Tab = 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix';
  *   3. Moderation: embeds the existing ModerationPanel.
  * Tabs implemented inline via common/Button with active styling.
  */
+function getHashTab(): Tab {
+  const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+  const valid: Tab[] = ['events', 'photos', 'moderation', 'lojinha', 'pix'];
+  return valid.includes(hash as Tab) ? (hash as Tab) : 'events';
+}
+
 export const AdminPanel: React.FC<AdminPanelProps> = ({ idToken }) => {
-  const [tab, setTab] = useState<Tab>('events');
+  const [tab, setTabState] = useState<Tab>(getHashTab);
+
+  function setTab(t: Tab) {
+    setTabState(t);
+    window.location.hash = t;
+  }
 
   return (
     <div className="flex flex-col gap-4">
