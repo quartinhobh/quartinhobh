@@ -81,7 +81,7 @@ export const UsersPanel: React.FC = () => {
   const filtered = filter === 'all' ? users : users.filter((u) => u.role === filter);
 
   const inputClass =
-    'font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream text-zine-burntOrange focus:outline-none focus:border-zine-burntOrange w-full';
+    'font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange w-full';
 
   return (
     <>
@@ -166,7 +166,7 @@ export const UsersPanel: React.FC = () => {
                   value={u.role}
                   disabled={busy === u.id}
                   onChange={(e) => void handleRoleChange(u.id, e.target.value as UserRole)}
-                  className="border-4 border-zine-burntYellow bg-zine-cream text-zine-burntOrange font-body p-1 text-sm"
+                  className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-1 text-sm"
                 >
                   {ASSIGNABLE_ROLES.map((r) => (
                     <option key={r} value={r}>{ROLE_LABELS[r]}</option>

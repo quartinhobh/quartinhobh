@@ -1,3 +1,5 @@
+import { createHmac } from 'crypto';
+
 // Brevo (ex-Sendinblue) transactional email service.
 // Plano gratuito: 300 emails/dia, sem domínio próprio obrigatório.
 //
@@ -10,8 +12,25 @@
 /** Limite diário de envios — Brevo free tier = 300/dia */
 export const DAILY_SEND_LIMIT = 300;
 
+/** Limite mensal de envios — Brevo free tier = 9.000/mês */
+export const MONTHLY_SEND_LIMIT = 9_000;
+
 /** Tamanho máximo de um grupo de contatos */
 export const MAX_GROUP_SIZE = 300;
+
+// ─── Unsubscribe HMAC tokens ─────────────────────────────────────────
+
+function getUnsubscribeSecret(): string {
+  return process.env.UNSUBSCRIBE_SECRET ?? process.env.BREVO_API_KEY ?? 'dev-secret';
+}
+
+export function generateUnsubscribeToken(email: string): string {
+  return createHmac('sha256', getUnsubscribeSecret()).update(email).digest('hex').slice(0, 32);
+}
+
+export function verifyUnsubscribeToken(email: string, token: string): boolean {
+  return generateUnsubscribeToken(email) === token;
+}
 
 const BREVO_API_URL = 'https://api.brevo.com/v3';
 
@@ -55,36 +74,67 @@ function getSender() {
   };
 }
 
-// ─── Controle diário de envios ──────────────────────────────────────
-// Contador em memória — reseta quando o processo reinicia.
-// Para persistência real, trocar por Firestore counter.
+// ─── Controle de envios (diário + mensal) ───────────────────────────
+// Contadores em memória — resetam quando o processo reinicia.
+// Para persistência real, trocar por Firestore counters.
 let dailySentCount = 0;
 let dailyResetDate = new Date().toDateString();
+let monthlySentCount = 0;
+let monthlyResetMonth = new Date().getMonth();
 
-function checkDailyLimit(count: number): void {
-  const today = new Date().toDateString();
+function checkLimits(count: number): void {
+  const now = new Date();
+  const today = now.toDateString();
+  const currentMonth = now.getMonth();
+
   if (today !== dailyResetDate) {
     dailySentCount = 0;
     dailyResetDate = today;
   }
+  if (currentMonth !== monthlyResetMonth) {
+    monthlySentCount = 0;
+    monthlyResetMonth = currentMonth;
+  }
+
   if (dailySentCount + count > DAILY_SEND_LIMIT) {
     throw new Error(
       `Limite diário de ${DAILY_SEND_LIMIT} emails atingido. ` +
-      `Já enviados hoje: ${dailySentCount}. Tentando enviar: ${count}. ` +
-      `Tente novamente amanhã ou migre para plano pago.`,
+      `Já enviados hoje: ${dailySentCount}. Tentando enviar: ${count}.`,
     );
   }
-}
+  if (monthlySentCount + count > MONTHLY_SEND_LIMIT) {
+    throw new Error(
+      `Limite mensal de ${MONTHLY_SEND_LIMIT} emails atingido. ` +
+      `Já enviados este mês: ${monthlySentCount}. Tentando enviar: ${count}.`,
+    );
+  }
 
-function incrementDailyCount(count: number): void {
+  // Reserve the quota immediately (atomic check-and-increment)
   dailySentCount += count;
+  monthlySentCount += count;
 }
 
-/** Retorna quantos emails ainda podem ser enviados hoje. */
-export function getDailyRemaining(): number {
-  const today = new Date().toDateString();
-  if (today !== dailyResetDate) return DAILY_SEND_LIMIT;
-  return Math.max(0, DAILY_SEND_LIMIT - dailySentCount);
+function decrementCounts(count: number): void {
+  dailySentCount = Math.max(0, dailySentCount - count);
+  monthlySentCount = Math.max(0, monthlySentCount - count);
+}
+
+/** Retorna limites e uso atual. */
+export function getLimitsInfo() {
+  const now = new Date();
+  const today = now.toDateString();
+  const currentMonth = now.getMonth();
+
+  let daily = dailySentCount;
+  let monthly = monthlySentCount;
+
+  if (today !== dailyResetDate) daily = 0;
+  if (currentMonth !== monthlyResetMonth) monthly = 0;
+
+  return {
+    dailyRemaining: Math.max(0, DAILY_SEND_LIMIT - daily),
+    monthlyRemaining: Math.max(0, MONTHLY_SEND_LIMIT - monthly),
+  };
 }
 
 /** Send a single transactional email. */
@@ -93,15 +143,19 @@ export async function sendEmail(
   subject: string,
   html: string,
 ): Promise<void> {
-  checkDailyLimit(1);
+  checkLimits(1);
   const payload: BrevoEmailPayload = {
     sender: getSender(),
     to: [{ email: to }],
     subject,
     htmlContent: html,
   };
-  await brevoRequest('/smtp/email', payload);
-  incrementDailyCount(1);
+  try {
+    await brevoRequest('/smtp/email', payload);
+  } catch (err) {
+    decrementCounts(1);
+    throw err;
+  }
 }
 
 /**
@@ -114,23 +168,28 @@ export async function sendBulk(
   html: string,
 ): Promise<number> {
   if (!recipients.length) return 0;
-  checkDailyLimit(recipients.length);
+  checkLimits(recipients.length);
   const sender = getSender();
 
   const BCC_BATCH_SIZE = 2000;
   let sent = 0;
-  for (let i = 0; i < recipients.length; i += BCC_BATCH_SIZE) {
-    const batch = recipients.slice(i, i + BCC_BATCH_SIZE);
-    const payload: BrevoEmailPayload = {
-      sender,
-      to: [{ email: sender.email }],
-      bcc: batch.map((email) => ({ email })),
-      subject,
-      htmlContent: html,
-    };
-    await brevoRequest('/smtp/email', payload);
-    sent += batch.length;
-    incrementDailyCount(batch.length);
+  try {
+    for (let i = 0; i < recipients.length; i += BCC_BATCH_SIZE) {
+      const batch = recipients.slice(i, i + BCC_BATCH_SIZE);
+      const payload: BrevoEmailPayload = {
+        sender,
+        to: [{ email: sender.email }],
+        bcc: batch.map((email) => ({ email })),
+        subject,
+        htmlContent: html,
+      };
+      await brevoRequest('/smtp/email', payload);
+      sent += batch.length;
+    }
+  } catch (err) {
+    const remaining = recipients.length - sent;
+    decrementCounts(remaining);
+    throw err;
   }
   return sent;
 }
@@ -192,9 +251,13 @@ function emailHeader(): string {
 }
 
 /** Footer compartilhado — mint bg (igual ao Footer.tsx) */
-function emailFooter(opts: { unsubscribe?: boolean } = {}): string {
+function emailFooter(opts: { unsubscribe?: boolean; recipientEmail?: string } = {}): string {
   const { apiUrl } = getUrls();
-  const unsubscribeUrl = `${apiUrl}/email/unsubscribe`;
+  let unsubscribeUrl = `${apiUrl}/email/unsubscribe`;
+  if (opts.recipientEmail) {
+    const token = generateUnsubscribeToken(opts.recipientEmail);
+    unsubscribeUrl = `${apiUrl}/email/unsubscribe?email=${encodeURIComponent(opts.recipientEmail)}&token=${token}`;
+  }
 
   return `
     <div style="background:${COLORS.mint};padding:14px 24px;text-align:center;border-top:4px solid ${COLORS.cream};">
@@ -236,7 +299,7 @@ function emailButton(text: string, href: string): string {
  * Template completo com header + body + footer (com unsubscribe).
  * Usar para newsletters e emails gerais.
  */
-export function wrapTemplate(body: string): string {
+export function wrapTemplate(body: string, recipientEmail?: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -247,7 +310,7 @@ export function wrapTemplate(body: string): string {
     <div style="padding:24px;color:${COLORS.text};line-height:1.6;font-size:16px;border-left:4px solid ${COLORS.cream};border-right:4px solid ${COLORS.cream};">
       ${body}
     </div>
-    ${emailFooter({ unsubscribe: true })}
+    ${emailFooter({ unsubscribe: true, recipientEmail })}
   </div>
   <!--[if mso]></td></tr></table><![endif]-->
 </body>

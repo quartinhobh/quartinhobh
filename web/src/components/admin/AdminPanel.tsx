@@ -256,7 +256,7 @@ const PhotosTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
             aria-label="photos-event-select"
             value={eventId}
             onChange={(e) => setEventId(e.target.value)}
-            className="border-4 border-zine-burntYellow bg-zine-cream text-zine-burntOrange font-body p-2"
+            className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2"
           >
             {events.map((e) => (
               <option key={e.id} value={e.id}>

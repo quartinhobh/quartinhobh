@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roleCheck';
-import { sendEmail, sendBulk, wrapTemplate, getDailyRemaining, DAILY_SEND_LIMIT, MAX_GROUP_SIZE } from '../services/emailService';
+import { sendEmail, sendBulk, wrapTemplate, getLimitsInfo, verifyUnsubscribeToken, DAILY_SEND_LIMIT, MONTHLY_SEND_LIMIT, MAX_GROUP_SIZE } from '../services/emailService';
 import { adminDb } from '../config/firebase';
 
 export const emailRouter: Router = Router();
@@ -19,8 +19,14 @@ emailRouter.get(
   '/unsubscribe',
   async (req: Request, res: Response) => {
     const email = req.query.email as string | undefined;
+    const token = req.query.token as string | undefined;
     if (!email) {
       // Sem email na query — mostra formulário para o usuário digitar
+      res.send(unsubscribeFormHtml());
+      return;
+    }
+    if (!token || !verifyUnsubscribeToken(email, token)) {
+      // Token ausente ou inválido — mostra formulário para tentar novamente
       res.send(unsubscribeFormHtml());
       return;
     }
@@ -38,14 +44,10 @@ emailRouter.get(
       }
 
       const userDoc = snap.docs[0]!;
-      const currentGroups = (userDoc.data().groups as string[]) || [];
-      const updatedGroups = currentGroups.includes(UNSUBSCRIBED_GROUP_ID)
-        ? currentGroups
-        : [...currentGroups, UNSUBSCRIBED_GROUP_ID];
-
+      // Remove de todos os grupos e adiciona apenas ao grupo de desinscritos
       await userDoc.ref.update({
         newsletterOptIn: false,
-        groups: updatedGroups,
+        groups: [UNSUBSCRIBED_GROUP_ID],
         updatedAt: Date.now(),
       });
 
@@ -98,9 +100,12 @@ emailRouter.get(
   requireAuth,
   requireRole('admin'),
   (_req: Request, res: Response) => {
+    const info = getLimitsInfo();
     res.json({
       dailyLimit: DAILY_SEND_LIMIT,
-      remaining: getDailyRemaining(),
+      dailyRemaining: info.dailyRemaining,
+      monthlyLimit: MONTHLY_SEND_LIMIT,
+      monthlyRemaining: info.monthlyRemaining,
       maxGroupSize: MAX_GROUP_SIZE,
     });
   },
@@ -244,10 +249,106 @@ emailRouter.delete(
   async (req: Request, res: Response) => {
     try {
       await adminDb.collection('contact_groups').doc(req.params.id!).delete();
+      const usersSnap = await adminDb.collection('users').where('groups', 'array-contains', req.params.id!).get();
+      const batch = adminDb.batch();
+      for (const doc of usersSnap.docs) {
+        const groups = (doc.data().groups as string[]).filter(g => g !== req.params.id!);
+        batch.update(doc.ref, { groups });
+      }
+      await batch.commit();
       res.status(204).send();
     } catch (err) {
       console.error('[email/groups]', err);
       res.status(500).json({ error: 'delete_group_failed' });
+    }
+  },
+);
+
+/** GET /email/groups/:id/members — lista membros de um grupo */
+emailRouter.get(
+  '/groups/:id/members',
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const snap = await adminDb
+        .collection('users')
+        .where('groups', 'array-contains', req.params.id!)
+        .get();
+      const members = snap.docs.map((d) => ({
+        id: d.id,
+        email: d.data().email as string | null,
+        displayName: d.data().displayName as string,
+      }));
+      res.json({ members });
+    } catch (err) {
+      console.error('[email/groups/members]', err);
+      res.status(500).json({ error: 'list_members_failed' });
+    }
+  },
+);
+
+/** POST /email/groups/:id/members — adiciona um usuário ao grupo */
+emailRouter.post(
+  '/groups/:id/members',
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    const { userId } = req.body as { userId?: string };
+    if (!userId) {
+      res.status(400).json({ error: 'missing_userId' });
+      return;
+    }
+    try {
+      const userRef = adminDb.collection('users').doc(userId);
+      const userSnap = await userRef.get();
+      if (!userSnap.exists) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+      const currentGroups = (userSnap.data()!.groups as string[]) || [];
+      if (currentGroups.includes(req.params.id!)) {
+        res.json({ ok: true }); // já está no grupo
+        return;
+      }
+      // Checar limite do grupo
+      const membersSnap = await adminDb
+        .collection('users')
+        .where('groups', 'array-contains', req.params.id!)
+        .count()
+        .get();
+      if (membersSnap.data().count >= MAX_GROUP_SIZE) {
+        res.status(400).json({ error: 'group_full', message: `Limite de ${MAX_GROUP_SIZE} membros` });
+        return;
+      }
+      await userRef.update({ groups: [...currentGroups, req.params.id!] });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[email/groups/members]', err);
+      res.status(500).json({ error: 'add_member_failed' });
+    }
+  },
+);
+
+/** DELETE /email/groups/:groupId/members/:userId — remove um usuário do grupo */
+emailRouter.delete(
+  '/groups/:groupId/members/:userId',
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const userRef = adminDb.collection('users').doc(req.params.userId!);
+      const userSnap = await userRef.get();
+      if (!userSnap.exists) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+      const currentGroups = (userSnap.data()!.groups as string[]) || [];
+      await userRef.update({ groups: currentGroups.filter((g) => g !== req.params.groupId!) });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[email/groups/members]', err);
+      res.status(500).json({ error: 'remove_member_failed' });
     }
   },
 );
@@ -307,6 +408,98 @@ emailRouter.put(
     } catch (err) {
       console.error('[email/users/newsletter]', err);
       res.status(500).json({ error: 'update_newsletter_failed' });
+    }
+  },
+);
+
+// ── Email Config (Firestore doc: email_config/settings) ─────────────
+// Flags globais como desabilitar email automático de evento.
+
+/** GET /email/config — retorna config de email */
+emailRouter.get(
+  '/config',
+  requireAuth,
+  requireRole('admin'),
+  async (_req: Request, res: Response) => {
+    try {
+      const doc = await adminDb.collection('email_config').doc('settings').get();
+      res.json({ config: doc.exists ? doc.data() : { autoEventEmail: true } });
+    } catch (err) {
+      console.error('[email/config]', err);
+      res.status(500).json({ error: 'get_config_failed' });
+    }
+  },
+);
+
+/** PUT /email/config — atualiza config de email */
+emailRouter.put(
+  '/config',
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    const { autoEventEmail } = req.body as { autoEventEmail?: boolean };
+    try {
+      await adminDb.collection('email_config').doc('settings').set(
+        { autoEventEmail: autoEventEmail ?? true, updatedAt: Date.now() },
+        { merge: true },
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[email/config]', err);
+      res.status(500).json({ error: 'update_config_failed' });
+    }
+  },
+);
+
+// ── Desinscritos ────────────────────────────────────────────────────
+
+/** GET /email/unsubscribed — lista usuários desinscritos */
+emailRouter.get(
+  '/unsubscribed',
+  requireAuth,
+  requireRole('admin'),
+  async (_req: Request, res: Response) => {
+    try {
+      const snap = await adminDb
+        .collection('users')
+        .where('groups', 'array-contains', UNSUBSCRIBED_GROUP_ID)
+        .get();
+      const users = snap.docs.map((d) => ({
+        id: d.id,
+        email: d.data().email as string | null,
+        displayName: d.data().displayName as string,
+      }));
+      res.json({ users });
+    } catch (err) {
+      console.error('[email/unsubscribed]', err);
+      res.status(500).json({ error: 'list_unsubscribed_failed' });
+    }
+  },
+);
+
+/** POST /email/resubscribe/:id — reinscrever um usuário */
+emailRouter.post(
+  '/resubscribe/:id',
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const userRef = adminDb.collection('users').doc(req.params.id!);
+      const userSnap = await userRef.get();
+      if (!userSnap.exists) {
+        res.status(404).json({ error: 'user_not_found' });
+        return;
+      }
+      const currentGroups = (userSnap.data()!.groups as string[]) || [];
+      await userRef.update({
+        newsletterOptIn: true,
+        groups: currentGroups.filter((g) => g !== UNSUBSCRIBED_GROUP_ID),
+        updatedAt: Date.now(),
+      });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[email/resubscribe]', err);
+      res.status(500).json({ error: 'resubscribe_failed' });
     }
   },
 );

@@ -64,7 +64,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
             aria-label="photo-category"
             value={category}
             onChange={(e) => setCategory(e.target.value as PhotoCategory)}
-            className="border-4 border-zine-burntYellow bg-zine-cream text-zine-burntOrange font-body p-2"
+            className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2"
           >
             <option value="category1">Fotos do evento</option>
             <option value="category2">Playlist</option>

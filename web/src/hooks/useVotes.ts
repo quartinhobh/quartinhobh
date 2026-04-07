@@ -177,7 +177,14 @@ export function useVotes(
           // Offline — salvar na fila, manter optimistic update na tela
           offlineQueue.addVote({ eventId, favoriteTrackId, leastLikedTrackId });
           // Persiste o optimistic no cache pra sobreviver reload
-          if (data) cache.set(cacheKey!, data);
+          // (não usar `data` — React state é async e ainda referencia priorData neste closure)
+          const optimisticData: VotesCacheData = {
+            tallies: priorData?.tallies
+              ? applyOptimistic(priorData.tallies, priorData.userVote, uid!, favoriteTrackId, leastLikedTrackId)
+              : null,
+            userVote: { favoriteTrackId, leastLikedTrackId, updatedAt: Date.now() },
+          };
+          cache.set(cacheKey!, optimisticData);
         } else {
           // Erro real do servidor — reverter
           setData(priorData);

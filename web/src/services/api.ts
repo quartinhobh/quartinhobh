@@ -533,7 +533,9 @@ export async function deleteInvite(email: string, idToken: string): Promise<void
 
 export interface EmailLimits {
   dailyLimit: number;
-  remaining: number;
+  dailyRemaining: number;
+  monthlyLimit: number;
+  monthlyRemaining: number;
   maxGroupSize: number;
 }
 
@@ -543,6 +545,54 @@ export async function fetchEmailLimits(idToken: string): Promise<EmailLimits> {
   });
   if (!res.ok) throw new Error(`GET /email/limits failed: ${res.status}`);
   return (await res.json()) as EmailLimits;
+}
+
+export interface EmailConfig {
+  autoEventEmail: boolean;
+}
+
+export async function fetchEmailConfig(idToken: string): Promise<EmailConfig> {
+  const res = await fetch(`${API_URL}/email/config`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /email/config failed: ${res.status}`);
+  const body = (await res.json()) as { config: EmailConfig };
+  return body.config;
+}
+
+export async function updateEmailConfig(
+  config: Partial<EmailConfig>,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/email/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) throw new Error(`PUT /email/config failed: ${res.status}`);
+}
+
+export interface UnsubscribedUser {
+  id: string;
+  email: string | null;
+  displayName: string;
+}
+
+export async function fetchUnsubscribed(idToken: string): Promise<UnsubscribedUser[]> {
+  const res = await fetch(`${API_URL}/email/unsubscribed`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /email/unsubscribed failed: ${res.status}`);
+  const body = (await res.json()) as { users: UnsubscribedUser[] };
+  return body.users;
+}
+
+export async function resubscribeUser(userId: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/email/resubscribe/${encodeURIComponent(userId)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`POST /email/resubscribe failed: ${res.status}`);
 }
 
 export interface ContactGroup {
@@ -572,6 +622,41 @@ export async function createContactGroup(
   });
   if (!res.ok) throw new Error(`POST /email/groups failed: ${res.status}`);
   return (await res.json()) as ContactGroup;
+}
+
+export interface GroupMember {
+  id: string;
+  email: string | null;
+  displayName: string;
+}
+
+export async function fetchGroupMembers(groupId: string, idToken: string): Promise<GroupMember[]> {
+  const res = await fetch(`${API_URL}/email/groups/${encodeURIComponent(groupId)}/members`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /email/groups/members failed: ${res.status}`);
+  const body = (await res.json()) as { members: GroupMember[] };
+  return body.members;
+}
+
+export async function addGroupMember(groupId: string, userId: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/email/groups/${encodeURIComponent(groupId)}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ userId }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(body.message || `POST /email/groups/members failed: ${res.status}`);
+  }
+}
+
+export async function removeGroupMember(groupId: string, userId: string, idToken: string): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/email/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(userId)}`,
+    { method: 'DELETE', headers: { Authorization: `Bearer ${idToken}` } },
+  );
+  if (!res.ok) throw new Error(`DELETE /email/groups/members failed: ${res.status}`);
 }
 
 export async function deleteContactGroup(id: string, idToken: string): Promise<void> {
