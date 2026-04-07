@@ -143,6 +143,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
       {tab === 'email' && <NewsletterPanel />}
       {tab === 'linktree' && <LinkTreePanel />}
       {tab === 'banners' && <BannerPanel />}
+      <p> beijos me liga </p>
     </div>
   );
 };
