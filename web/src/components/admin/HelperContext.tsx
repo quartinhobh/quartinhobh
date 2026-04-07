@@ -30,6 +30,7 @@ export const HelperProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useHelper() {
   return useContext(HelperContext);
 }
