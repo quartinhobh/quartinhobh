@@ -130,6 +130,7 @@ export interface UserVote {
 export interface ChatMessage {
   uid: string;
   displayName: string;
+  avatarUrl?: string | null;
   text: string;
   timestamp: number;
   isDeleted: boolean;

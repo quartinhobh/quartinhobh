@@ -61,7 +61,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <div className="border-b border-zine-cream/40 py-2 px-1 flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <UserAvatar src={null} name={message.displayName} size="sm" />
+        <UserAvatar src={message.avatarUrl ?? null} name={message.displayName} size="sm" />
         <Link
           to={`/user/${message.uid}`}
           className="font-display text-zine-burntYellow text-sm hover:underline"

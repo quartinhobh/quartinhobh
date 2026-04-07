@@ -135,31 +135,7 @@ usersRouter.delete(
 
 // ── User Profile ─────────────────────────────────────────────────────
 
-/** GET /users/:id/profile — public profile */
-usersRouter.get('/:id/profile', async (req: Request, res: Response) => {
-  try {
-    const snap = await adminDb.collection('users').doc(req.params.id!).get();
-    if (!snap.exists) {
-      res.status(404).json({ error: 'user_not_found' });
-      return;
-    }
-    const u = snap.data() as User;
-    res.status(200).json({
-      id: u.id,
-      displayName: u.displayName,
-      username: u.username ?? null,
-      avatarUrl: u.avatarUrl ?? null,
-      bio: u.bio ?? null,
-      socialLinks: u.socialLinks ?? [],
-      favoriteAlbums: u.favoriteAlbums ?? [],
-      role: u.role,
-    });
-  } catch {
-    res.status(500).json({ error: 'profile_fetch_failed' });
-  }
-});
-
-/** GET /users/username/:username — public profile by username */
+/** GET /users/username/:username — public profile by username (must be before /:id) */
 usersRouter.get('/username/:username', async (req: Request, res: Response) => {
   try {
     const snap = await adminDb.collection('users')
@@ -179,7 +155,29 @@ usersRouter.get('/username/:username', async (req: Request, res: Response) => {
       bio: u.bio ?? null,
       socialLinks: u.socialLinks ?? [],
       favoriteAlbums: u.favoriteAlbums ?? [],
-      role: u.role,
+    });
+  } catch {
+    res.status(500).json({ error: 'profile_fetch_failed' });
+  }
+});
+
+/** GET /users/:id/profile — public profile by UID */
+usersRouter.get('/:id/profile', async (req: Request, res: Response) => {
+  try {
+    const snap = await adminDb.collection('users').doc(req.params.id!).get();
+    if (!snap.exists) {
+      res.status(404).json({ error: 'user_not_found' });
+      return;
+    }
+    const u = snap.data() as User;
+    res.status(200).json({
+      id: u.id,
+      displayName: u.displayName,
+      username: u.username ?? null,
+      avatarUrl: u.avatarUrl ?? null,
+      bio: u.bio ?? null,
+      socialLinks: u.socialLinks ?? [],
+      favoriteAlbums: u.favoriteAlbums ?? [],
     });
   } catch {
     res.status(500).json({ error: 'profile_fetch_failed' });
@@ -251,8 +249,9 @@ usersRouter.put(
           res.status(400).json({ error: `invalid platform: ${link.platform}` });
           return;
         }
-        if (typeof link.url !== 'string' || link.url.length > 300) {
-          res.status(400).json({ error: 'invalid social link url' });
+        if (typeof link.url !== 'string' || link.url.length > 300 ||
+            !link.url.startsWith('https://')) {
+          res.status(400).json({ error: 'invalid social link url — must start with https://' });
           return;
         }
       }

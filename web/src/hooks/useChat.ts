@@ -33,6 +33,7 @@ export function useChat(eventId: string): UseChatResult {
   const firebaseUid = useSessionStore((s) => s.firebaseUid);
   const sessionId = useSessionStore((s) => s.sessionId);
   const displayNameStore = useSessionStore((s) => s.displayName);
+  const avatarUrlStore = useSessionStore((s) => s.avatarUrl);
   const guestName = useSessionStore((s) => s.guestName);
 
   useEffect(() => {
@@ -82,12 +83,13 @@ export function useChat(eventId: string): UseChatResult {
       await push(messagesRef, {
         uid,
         displayName,
+        avatarUrl: avatarUrlStore ?? null,
         text: trimmed,
         timestamp: serverTimestamp(),
         isDeleted: false,
       });
     },
-    [eventId, firebaseUid, sessionId, displayNameStore, guestName]
+    [eventId, firebaseUid, sessionId, displayNameStore, avatarUrlStore, guestName]
   );
 
   const removeMessage = useCallback((messageId: string) => {

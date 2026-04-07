@@ -52,7 +52,6 @@ export interface UserProfile {
   bio: string | null;
   socialLinks: SocialLink[];
   favoriteAlbums: FavoriteAlbum[];
-  role: UserRole;
 }
 
 export async function fetchUserProfile(userId: string): Promise<UserProfile> {
