@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import { useIdToken } from '@/hooks/useIdToken';
@@ -38,16 +38,16 @@ export const BannerPanel: React.FC = () => {
   const [autoDismiss, setAutoDismiss] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!idToken) return;
     try {
       setBanners(await fetchAllBanners(idToken));
     } catch { /* silent */ } finally {
       setLoading(false);
     }
-  };
+  }, [idToken]);
 
-  useEffect(() => { void load(); }, [idToken]);
+  useEffect(() => { void load(); }, [load]);
 
   const handleRouteToggle = (route: BannerRoute) => {
     setRoutes((prev) =>

@@ -29,7 +29,7 @@ function readDismissLocal(): DismissState | null {
 }
 
 function writeDismissLocal(state: DismissState) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* private mode */ }
 }
 
 export interface UseBannerResult {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import { useIdToken } from '@/hooks/useIdToken';
@@ -27,16 +27,16 @@ export const LinkTreePanel: React.FC = () => {
   const dragIdx = useRef<number | null>(null);
   const [dropTarget, setDropTarget] = useState<{ idx: number; half: 'top' | 'bottom' } | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!idToken) return;
     try {
       setLinks(await fetchAllLinks(idToken));
     } catch { /* silent */ } finally {
       setLoading(false);
     }
-  };
+  }, [idToken]);
 
-  useEffect(() => { void load(); }, [idToken]);
+  useEffect(() => { void load(); }, [load]);
 
   const handleAdd = async () => {
     if (!idToken || !title.trim() || !url.trim()) return;

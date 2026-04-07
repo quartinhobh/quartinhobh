@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+
+function Wrapper({ children }: { children: React.ReactNode }) {
+  return <MemoryRouter>{children}</MemoryRouter>;
+}
 
 describe('ChatMessage', () => {
   const base = {
@@ -14,7 +19,7 @@ describe('ChatMessage', () => {
   };
 
   it('renders displayName, text, and a timestamp', () => {
-    render(<ChatMessage message={base} />);
+    render(<ChatMessage message={base} />, { wrapper: Wrapper });
     const name = screen.getByText('Alice');
     expect(name).toBeInTheDocument();
     expect(name.className).toMatch(/font-display/);
@@ -28,14 +33,14 @@ describe('ChatMessage', () => {
   });
 
   it('uses cream divider border', () => {
-    const { container } = render(<ChatMessage message={base} />);
+    const { container } = render(<ChatMessage message={base} />, { wrapper: Wrapper });
     const root = container.firstChild as HTMLElement;
     expect(root.className).toMatch(/border-b/);
     expect(root.className).toMatch(/zine-cream/);
   });
 
   it('does not render delete button when canModerate is false', () => {
-    render(<ChatMessage message={base} onDelete={vi.fn()} />);
+    render(<ChatMessage message={base} onDelete={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.queryByTestId('chat-delete-btn')).not.toBeInTheDocument();
   });
 
@@ -43,6 +48,7 @@ describe('ChatMessage', () => {
     const onDelete = vi.fn(async () => {});
     render(
       <ChatMessage message={base} canModerate onDelete={onDelete} />,
+      { wrapper: Wrapper },
     );
     const btn = screen.getByTestId('chat-delete-btn');
     expect(btn).toBeInTheDocument();
@@ -51,7 +57,7 @@ describe('ChatMessage', () => {
     const reasonInput = await screen.findByTestId('chat-mod-reason');
     await userEvent.type(reasonInput, 'spam');
     await userEvent.click(screen.getByTestId('chat-mod-confirm'));
-    expect(onDelete).toHaveBeenCalledWith('m1', 'spam');
+    expect(onDelete).toHaveBeenCalledWith('m1', 'spam', 'u1');
   });
 
   it('renders [mensagem apagada] placeholder when isDeleted', () => {
@@ -61,6 +67,7 @@ describe('ChatMessage', () => {
         canModerate
         onDelete={vi.fn()}
       />,
+      { wrapper: Wrapper },
     );
     expect(screen.getByText(/mensagem apagada/)).toBeInTheDocument();
     // delete button hidden once already deleted
