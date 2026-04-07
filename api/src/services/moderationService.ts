@@ -37,6 +37,7 @@ export async function deleteMessage(
   messageId: string,
   performedBy: string,
   reason: string | null,
+  targetUserIdHint?: string,
 ): Promise<void> {
   const path = `chats/${eventId}/messages/${messageId}`;
   const snap = await adminRtdb.ref(path).get();
@@ -44,7 +45,7 @@ export async function deleteMessage(
   await adminRtdb.ref(`${path}/isDeleted`).set(true);
   await writeLog({
     action: 'delete_message',
-    targetUserId: existing.uid ?? 'unknown',
+    targetUserId: existing.uid ?? targetUserIdHint ?? 'unknown',
     performedBy,
     eventId,
     messageId,

@@ -27,15 +27,19 @@ function invalidateCache() {
   currentCache = null;
 }
 
-eventsRouter.get('/', async (_req: Request, res: Response) => {
+eventsRouter.get('/', async (req: Request, res: Response) => {
   try {
     if (listCache && Date.now() - listCache.at < CACHE_TTL) {
-      res.status(200).json({ events: listCache.data });
+      const status = req.query.status as string | undefined;
+      const filtered = status ? listCache.data.filter((e) => e.status === status) : listCache.data;
+      res.status(200).json({ events: filtered });
       return;
     }
     const events = await listEvents();
     listCache = { data: events, at: Date.now() };
-    res.status(200).json({ events });
+    const status = req.query.status as string | undefined;
+    const filtered = status ? events.filter((e) => e.status === status) : events;
+    res.status(200).json({ events: filtered });
   } catch {
     res.status(500).json({ error: 'list_failed' });
   }

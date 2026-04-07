@@ -29,6 +29,7 @@ const Admin = lazy(() => import('@/pages/Admin'));
 const Shop = lazy(() => import('@/pages/Shop'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const PublicProfile = lazy(() => import('@/pages/PublicProfile'));
+const UserRedirect = lazy(() => import('@/pages/UserRedirect'));
 const DevLogin = lazy(() => import('@/pages/DevLogin'));
 
 /** Reads :eventId from the route and forwards to EventDetail. */
@@ -76,6 +77,7 @@ export default function App() {
               <Route path="/lojinha" element={<Shop />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/u/:username" element={<PublicProfile />} />
+              <Route path="/user/:id" element={<UserRedirect />} />
               <Route path="/admin" element={<Admin idToken={idToken} />} />
               {import.meta.env.DEV && (
                 <Route path="/__dev-login" element={<DevLogin />} />

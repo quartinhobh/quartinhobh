@@ -22,6 +22,7 @@ export interface UseModerationResult {
     eventId: string,
     messageId: string,
     reason?: string,
+    targetUserId?: string,
   ) => Promise<void>;
   banUser: (userId: string, eventId?: string, reason?: string) => Promise<void>;
   unbanUser: (userId: string) => Promise<void>;
@@ -101,9 +102,9 @@ export function useModeration(idToken: string | null): UseModerationResult {
   }, [idToken, cacheKey]);
 
   const deleteMessage = useCallback(
-    async (eventId: string, messageId: string, reason?: string) => {
+    async (eventId: string, messageId: string, reason?: string, targetUserId?: string) => {
       if (!idToken) throw new Error('not_authenticated');
-      await apiDeleteMessage(eventId, messageId, idToken, reason);
+      await apiDeleteMessage(eventId, messageId, idToken, reason, targetUserId);
       await refetch();
     },
     [idToken, refetch],

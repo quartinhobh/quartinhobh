@@ -1,14 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '@/components/common/Button';
 import Modal from '@/components/common/Modal';
 import UserAvatar from '@/components/common/UserAvatar';
-import ProfilePopover from '@/components/chat/ProfilePopover';
 import type { ChatMessage as ChatMessageType } from '@/types';
 
 export interface ChatMessageProps {
   message: ChatMessageType & { id?: string };
   canModerate?: boolean;
-  onDelete?: (messageId: string, reason?: string) => Promise<void> | void;
+  onDelete?: (messageId: string, reason?: string, targetUserId?: string) => Promise<void> | void;
   onBan?: (userId: string, reason?: string) => Promise<void> | void;
 }
 
@@ -40,20 +40,19 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const [confirming, setConfirming] = useState<'delete' | 'ban' | null>(null);
   const [reason, setReason] = useState('');
-  const [popover, setPopover] = useState<DOMRect | null>(null);
   const showDelete = canModerate && !!onDelete && !!message.id && !message.isDeleted;
   const showBan = canModerate && !!onBan && !!message.uid && !message.isDeleted;
 
-  const handleNameClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    setPopover((prev) => (prev ? null : e.currentTarget.getBoundingClientRect()));
-  }, []);
-
   const handleConfirm = async (): Promise<void> => {
     const trimmed = reason.trim() || undefined;
-    if (confirming === 'delete' && onDelete && message.id) {
-      await onDelete(message.id, trimmed);
-    } else if (confirming === 'ban' && onBan && message.uid) {
-      await onBan(message.uid, trimmed);
+    try {
+      if (confirming === 'delete' && onDelete && message.id) {
+        await onDelete(message.id, trimmed, message.uid);
+      } else if (confirming === 'ban' && onBan && message.uid) {
+        await onBan(message.uid, trimmed);
+      }
+    } catch (err) {
+      console.error('[moderation] action failed:', err);
     }
     setConfirming(null);
     setReason('');
@@ -63,13 +62,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     <div className="border-b border-zine-cream/40 py-2 px-1 flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <UserAvatar src={null} name={message.displayName} size="sm" />
-        <button
-          type="button"
-          onClick={handleNameClick}
-          className="font-display text-zine-burntYellow text-sm hover:underline cursor-pointer bg-transparent border-none p-0"
+        <Link
+          to={`/user/${message.uid}`}
+          className="font-display text-zine-burntYellow text-sm hover:underline"
         >
           {message.displayName}
-        </button>
+        </Link>
         <span
           data-testid="chat-message-time"
           className="font-body text-xs text-zine-burntOrange/70"
@@ -108,14 +106,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           message.text
         )}
       </p>
-      {popover && (
-        <ProfilePopover
-          uid={message.uid}
-          displayName={message.displayName}
-          anchorRect={popover}
-          onClose={() => setPopover(null)}
-        />
-      )}
       {confirming && (
         <Modal
           isOpen={!!confirming}

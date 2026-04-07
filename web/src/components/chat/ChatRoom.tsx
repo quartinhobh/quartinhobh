@@ -6,7 +6,7 @@ import type { ChatMessage as ChatMessageType } from '@/types';
 export interface ChatRoomProps {
   messages: Array<ChatMessageType & { id: string }>;
   canModerate?: boolean;
-  onDeleteMessage?: (messageId: string, reason?: string) => Promise<void> | void;
+  onDeleteMessage?: (messageId: string, reason?: string, targetUserId?: string) => Promise<void> | void;
   onBanUser?: (userId: string, reason?: string) => Promise<void> | void;
 }
 

@@ -1,6 +1,37 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 import type { UserRole } from '@/types';
+
+const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+interface PersistedWithTimestamp<T> {
+  state: T;
+  version?: number;
+  savedAt: number;
+}
+
+const expiringStorage: PersistStorage<unknown> = {
+  getItem(name: string) {
+    const raw = localStorage.getItem(name);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as PersistedWithTimestamp<unknown>;
+      if (parsed.savedAt && Date.now() - parsed.savedAt > SESSION_MAX_AGE_MS) {
+        localStorage.removeItem(name);
+        return null;
+      }
+      return parsed as unknown as StorageValue<unknown>;
+    } catch {
+      return null;
+    }
+  },
+  setItem(name: string, value: StorageValue<unknown>) {
+    localStorage.setItem(name, JSON.stringify({ ...value, savedAt: Date.now() }));
+  },
+  removeItem(name: string) {
+    localStorage.removeItem(name);
+  },
+};
 
 export interface SessionUser {
   userId: string;
@@ -64,6 +95,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'quartinho:session',
+      storage: expiringStorage as PersistStorage<SessionState>,
       // Only persist identity fields, not actions.
       partialize: (s) => ({
         sessionId: s.sessionId,

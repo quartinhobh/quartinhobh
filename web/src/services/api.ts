@@ -331,6 +331,7 @@ export async function deleteChatMessage(
   messageId: string,
   idToken: string,
   reason?: string,
+  targetUserId?: string,
 ): Promise<void> {
   const res = await fetch(
     `${API_URL}/moderation/chat/${encodeURIComponent(eventId)}/delete`,
@@ -340,7 +341,7 @@ export async function deleteChatMessage(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify({ messageId, reason }),
+      body: JSON.stringify({ messageId, reason, targetUserId }),
     },
   );
   if (!res.ok) throw new Error(`POST moderation/delete failed: ${res.status}`);

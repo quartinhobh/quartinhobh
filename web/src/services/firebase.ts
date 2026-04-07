@@ -40,20 +40,18 @@ function loadConfig(): FirebaseClientConfig {
   }
 }
 
-export const firebaseApp: FirebaseApp = initializeApp(loadConfig());
+const config = loadConfig();
+export const firebaseApp: FirebaseApp = initializeApp(config);
 export const auth: Auth = getAuth(firebaseApp);
 export const firestore: Firestore = getFirestore(firebaseApp);
-export const realtimeDb: Database = getDatabase(firebaseApp);
+// Pass the databaseURL explicitly so the namespace (?ns=...) is preserved.
+// connectDatabaseEmulator strips the namespace, so we avoid it entirely.
+export const realtimeDb: Database = getDatabase(firebaseApp, config.databaseURL);
 export const storage: FirebaseStorage = getStorage(firebaseApp);
 
 if (import.meta.env.VITE_USE_EMULATOR === 'true') {
   try {
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  } catch {
-    // already connected
-  }
-  try {
-    connectDatabaseEmulator(realtimeDb, 'localhost', 9000);
   } catch {
     // already connected
   }

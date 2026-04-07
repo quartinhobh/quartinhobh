@@ -14,21 +14,21 @@ export interface LiveChatProps {
 export const LiveChat: React.FC<LiveChatProps> = ({ eventId: eventIdProp }) => {
   const params = useParams<{ eventId?: string }>();
   const eventId = eventIdProp ?? params.eventId ?? 'debug-chat';
-  const { messages, sendMessage } = useChat(eventId);
+  const { messages, sendMessage, removeMessage } = useChat(eventId);
   const role = useSessionStore((s) => s.role);
   const canModerate = role === 'admin' || role === 'moderator';
 
   const [idToken, setIdToken] = useState<string | null>(null);
   useEffect(() => {
-    let cancelled = false;
-    const user = auth.currentUser;
-    if (user) {
-      void user.getIdToken().then((t) => {
-        if (!cancelled) setIdToken(t);
-      });
-    }
-    return () => { cancelled = true; };
-  }, [role]);
+    const unsub = auth.onIdTokenChanged(async (user) => {
+      if (user) {
+        setIdToken(await user.getIdToken());
+      } else {
+        setIdToken(null);
+      }
+    });
+    return unsub;
+  }, []);
 
   const { deleteMessage, banUser } = useModeration(idToken);
 
@@ -47,7 +47,10 @@ export const LiveChat: React.FC<LiveChatProps> = ({ eventId: eventIdProp }) => {
         canModerate={canModerate}
         onDeleteMessage={
           canModerate
-            ? (messageId, reason) => deleteMessage(eventId, messageId, reason)
+            ? (messageId, reason, targetUserId) => {
+                removeMessage(messageId);
+                void deleteMessage(eventId, messageId, reason, targetUserId);
+              }
             : undefined
         }
         onBanUser={

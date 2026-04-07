@@ -23,7 +23,7 @@ moderationRouter.post(
   requireAuth,
   requireRole('moderator', 'admin'),
   async (req: Request, res: Response) => {
-    const body = (req.body ?? {}) as { messageId?: unknown; reason?: unknown };
+    const body = (req.body ?? {}) as { messageId?: unknown; reason?: unknown; targetUserId?: unknown };
     if (typeof body.messageId !== 'string' || body.messageId.length === 0) {
       res.status(400).json({ error: 'invalid_payload' });
       return;
@@ -32,12 +32,17 @@ moderationRouter.post(
       typeof body.reason === 'string' && body.reason.length > 0
         ? body.reason
         : null;
+    const targetUserId =
+      typeof body.targetUserId === 'string' && body.targetUserId.length > 0
+        ? body.targetUserId
+        : undefined;
     try {
       await deleteMessage(
         req.params.eventId!,
         body.messageId,
         req.user!.uid,
         reason,
+        targetUserId,
       );
       res.status(200).json({ ok: true });
     } catch {

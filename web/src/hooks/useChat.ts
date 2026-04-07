@@ -18,6 +18,7 @@ export interface ChatMessageWithId extends ChatMessage {
 export interface UseChatResult {
   messages: ChatMessageWithId[];
   sendMessage: (text: string) => Promise<void>;
+  removeMessage: (messageId: string) => void;
   loading: boolean;
 }
 
@@ -31,6 +32,7 @@ export function useChat(eventId: string): UseChatResult {
   const [loading, setLoading] = useState(true);
   const firebaseUid = useSessionStore((s) => s.firebaseUid);
   const sessionId = useSessionStore((s) => s.sessionId);
+  const displayNameStore = useSessionStore((s) => s.displayName);
   const guestName = useSessionStore((s) => s.guestName);
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export function useChat(eventId: string): UseChatResult {
       const trimmed = text.trim();
       if (!trimmed) return;
       const uid = firebaseUid ?? sessionId ?? 'anonymous';
-      const displayName = guestName ?? 'Convidado';
+      const displayName = displayNameStore || guestName || 'Convidado';
       const messagesRef = ref(realtimeDb, `chats/${eventId}/messages`);
       await push(messagesRef, {
         uid,
@@ -85,8 +87,12 @@ export function useChat(eventId: string): UseChatResult {
         isDeleted: false,
       });
     },
-    [eventId, firebaseUid, sessionId, guestName]
+    [eventId, firebaseUid, sessionId, displayNameStore, guestName]
   );
 
-  return { messages, sendMessage, loading };
+  const removeMessage = useCallback((messageId: string) => {
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+  }, []);
+
+  return { messages, sendMessage, removeMessage, loading };
 }
