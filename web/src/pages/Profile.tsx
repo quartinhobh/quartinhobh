@@ -402,6 +402,7 @@ export const Profile: React.FC = () => {
                         <img
                           src={album.coverUrl ?? ''}
                           alt={album.title}
+                          loading="lazy"
                           className="w-full h-full object-cover rounded-md border-2 border-zine-burntYellow/30 cursor-grab"
                           onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
                         />
@@ -451,6 +452,10 @@ export const Profile: React.FC = () => {
                     Cancelar
                   </button>
                 </div>
+                <p className="font-body text-xs leading-relaxed text-zine-burntOrange/70">
+                  Dica: tente buscar no formato "album - artista" para ser mais especifico. <br />
+                  E tenha um tiquinho de paciencia, a busca pode levar uns segundinhos.
+                </p>
                 {albumSearching && (
                   <p className="font-body text-xs text-zine-burntOrange/60 animate-pulse">Buscando...</p>
                 )}
@@ -466,7 +471,7 @@ export const Profile: React.FC = () => {
                             className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-zine-burntYellow/10 text-left"
                           >
                             {r.coverUrl && (
-                              <img src={r.coverUrl} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
+                              <img src={r.coverUrl} alt="" loading="lazy" className="w-8 h-8 rounded object-cover shrink-0" />
                             )}
                             <div className="min-w-0">
                               <p className="font-body text-sm truncate">{r.title}</p>

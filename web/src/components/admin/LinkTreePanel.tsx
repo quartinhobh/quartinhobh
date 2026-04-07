@@ -9,6 +9,7 @@ import {
   deleteLink,
   reorderLinks,
 } from '@/services/api';
+import HelperBox from '@/components/admin/HelperBox';
 import type { LinkTreeItem } from '@/types';
 
 const inputClass =
@@ -114,6 +115,7 @@ export const LinkTreePanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <HelperBox>Organize os links da página de links do site. Arraste para reordenar e use o toggle para ativar/desativar.</HelperBox>
       {/* Add form */}
       <ZineFrame bg="cream">
         <div className="flex flex-wrap gap-2">

@@ -50,6 +50,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         alt={name}
         width={px}
         height={px}
+        loading="lazy"
         className={`rounded-full object-cover shrink-0 ${className}`}
         style={{ width: px, height: px }}
       />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import { LoadingState } from '@/components/common/LoadingState';
 import Button from '@/components/common/Button';
+import HelperBox from '@/components/admin/HelperBox';
 import { useModeration } from '@/hooks/useModeration';
 import { useIdToken } from '@/hooks/useIdToken';
 import { fetchModerationUserProfile } from '@/services/api';
@@ -54,6 +55,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <HelperBox>Veja banimentos ativos, logs de moderação e gerencie restrições de usuários.</HelperBox>
       <ZineFrame bg="cream">
         <h2 className="font-display text-2xl text-zine-burntOrange mb-3">
           Banimentos ativos

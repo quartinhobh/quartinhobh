@@ -10,6 +10,7 @@ import {
   deleteInvite,
 } from '@/services/api';
 import type { RoleInvite } from '@/services/api';
+import HelperBox from '@/components/admin/HelperBox';
 import type { User, UserRole } from '@/types';
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -85,6 +86,7 @@ export const UsersPanel: React.FC = () => {
 
   return (
     <>
+      <HelperBox>Gerencie permissões e papéis dos usuários. Convide novos admins ou moderadores por email.</HelperBox>
       {/* Invite by email */}
       <ZineFrame bg="cream" borderColor="burntYellow">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">

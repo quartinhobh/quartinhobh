@@ -7,6 +7,20 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="alternate icon" type="image/png" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <!-- Preload critical fonts to avoid FOIT waterfall -->
+    <link rel="preload" href="/fonts/AlfaSlabOne-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Bitter-Regular.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Preconnect to external origins for faster first fetch -->
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://coverartarchive.org" crossorigin />
+
+    <!-- SEO / Social sharing -->
+    <meta name="description" content="Clube de escuta coletiva — ouça discos inteiros em grupo, converse em tempo real e vote favoritos." />
+    <meta property="og:title" content="Quartinho - Clube de Escuta" />
+    <meta property="og:description" content="Clube de escuta coletiva — ouça discos inteiros em grupo, converse em tempo real e vote favoritos." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/pwa-512x512.png" />
     <title>Quartinho - Clube de Escuta</title>
   </head>
   <body>

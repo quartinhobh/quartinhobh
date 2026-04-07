@@ -17,6 +17,7 @@ interface ApiCacheState {
 // TTL padrão: 3 horas — cobre a duração de um evento.
 // Dados que mudam frequentemente (votos, moderação) passam TTL próprio.
 const DEFAULT_TTL = 3 * 60 * 60 * 1000; // 3 hours
+const MAX_ENTRIES = 100;
 
 export const useApiCache = create<ApiCacheState>()(
   persist(
@@ -38,12 +39,26 @@ export const useApiCache = create<ApiCacheState>()(
       },
 
       set: <T>(key: string, data: T) => {
-        set((s) => ({
-          cache: {
+        set((s) => {
+          const next = {
             ...s.cache,
             [key]: { data, timestamp: Date.now() },
-          },
-        }));
+          };
+          // LRU eviction: remove oldest if over limit
+          const keys = Object.keys(next);
+          if (keys.length > MAX_ENTRIES) {
+            let oldestKey = keys[0]!;
+            let oldestTs = next[oldestKey]!.timestamp;
+            for (const k of keys) {
+              if (next[k]!.timestamp < oldestTs) {
+                oldestKey = k;
+                oldestTs = next[k]!.timestamp;
+              }
+            }
+            delete next[oldestKey];
+          }
+          return { cache: next };
+        });
       },
 
       invalidate: (key: string) => {

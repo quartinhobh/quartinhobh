@@ -24,6 +24,7 @@ import {
   type EmailLimits,
   type UnsubscribedUser,
 } from '@/services/api';
+import HelperBox from '@/components/admin/HelperBox';
 import type { User } from '@/types';
 
 const inputClass =
@@ -43,6 +44,7 @@ export const NewsletterPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <HelperBox>Envie emails, gerencie grupos de distribuição e acompanhe o histórico de campanhas.</HelperBox>
       {limits && (
         <div className="font-body text-sm text-zine-burntOrange/70 dark:text-zine-cream/70 bg-zine-cream dark:bg-zine-surface-dark border-2 border-dashed border-zine-burntYellow rounded px-3 py-2">
           Hoje: <strong>{limits.dailyRemaining}/{limits.dailyLimit}</strong>
@@ -139,6 +141,7 @@ const NewsletterForm: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   return (
     <ZineFrame bg="cream">
       <h3 className="font-display text-xl text-zine-burntOrange mb-3">Enviar Newsletter</h3>
+      <HelperBox>Escreva o assunto e o corpo do email. Use os grupos para filtrar quem recebe: "incluir" envia só para esses grupos, "excluir" remove esses grupos do envio.</HelperBox>
       <div className="flex flex-col gap-3">
         <input
           value={subject}

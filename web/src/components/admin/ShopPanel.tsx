@@ -26,6 +26,7 @@ import {
   reorderProducts,
 } from '@/services/api';
 import { useShopData } from '@/hooks/useShopData';
+import HelperBox from '@/components/admin/HelperBox';
 import type { Product } from '@/types';
 
 const inputClass =
@@ -119,6 +120,8 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
 
   return (
     <div className="flex flex-col gap-4">
+      {showPix && <HelperBox>Configure os dados de PIX para recebimento de pagamentos.</HelperBox>}
+      {showProducts && <HelperBox>Adicione, edite e remova produtos da lojinha. Arraste para reordenar.</HelperBox>}
       {/* PIX Config */}
       {showPix && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Configuração PIX</h3>
@@ -170,6 +173,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
       {/* CSV import */}
       {showProducts && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Importar CSV</h3>
+        <HelperBox>Cole vários produtos de uma vez. O preço é em centavos (ex: 1500 = R$15,00). Uma linha por produto.</HelperBox>
         <p className="font-body text-xs text-zine-burntOrange/60 mb-2">
           Formato: emoji,nome,descrição,preço(centavos) — uma linha por produto
         </p>

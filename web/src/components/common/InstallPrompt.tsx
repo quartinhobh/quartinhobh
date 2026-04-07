@@ -27,7 +27,11 @@ export const InstallPrompt: React.FC = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.localStorage.getItem(DISMISS_KEY) === '1') return;
+    const dismissed = window.localStorage.getItem(DISMISS_KEY);
+    if (dismissed) {
+      const ts = parseInt(dismissed, 10);
+      if (!isNaN(ts) && Date.now() - ts < 30 * 24 * 60 * 60 * 1000) return;
+    }
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -58,7 +62,7 @@ export const InstallPrompt: React.FC = () => {
 
   const dismiss = () => {
     try {
-      window.localStorage.setItem(DISMISS_KEY, '1');
+      window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
     } catch {
       // private mode — fail silently
     }

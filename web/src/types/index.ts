@@ -258,19 +258,6 @@ export interface PaginatedResponse<T> {
 
 // ── Frontend-only shapes ───────────────────────────────────────────────
 
-export interface LocalSession {
-  id: string;
-  type: SessionType;
-  guestName: string;
-  createdAt: number;
-  lastActiveAt: number;
-}
-
-export interface FirebaseUidStore {
-  uid: string;
-  linked: boolean;
-}
-
 export interface MusicBrainzTrack {
   id: string;
   title: string;

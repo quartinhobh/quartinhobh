@@ -58,6 +58,13 @@ export interface SessionState {
   clear: () => void;
 }
 
+// One-time cleanup of legacy localStorage keys
+try {
+  localStorage.removeItem('quartinho_session');
+  localStorage.removeItem('quartinho_firebase_uid');
+  localStorage.removeItem('quartinho.session');
+} catch { /* private mode */ }
+
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({

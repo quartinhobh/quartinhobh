@@ -9,6 +9,8 @@ import UsersPanel from '@/components/admin/UsersPanel';
 import NewsletterPanel from '@/components/admin/NewsletterPanel';
 import LinkTreePanel from '@/components/admin/LinkTreePanel';
 import BannerPanel from '@/components/admin/BannerPanel';
+import HelperBox from '@/components/admin/HelperBox';
+import { HelperProvider, useHelper } from '@/components/admin/HelperContext';
 import { useIdToken } from '@/hooks/useIdToken';
 import { auth } from '@/services/firebase';
 import {
@@ -29,7 +31,7 @@ export interface AdminPanelProps {
   idToken?: string | null;
 }
 
-type Tab = 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'linktree' | 'banners';
+type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'linktree' | 'banners';
 
 /**
  * AdminPanel — three-tab admin dashboard:
@@ -40,12 +42,61 @@ type Tab = 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'e
  */
 function getHashTab(): Tab {
   const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-  const valid: Tab[] = ['events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'linktree', 'banners'];
+  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'linktree', 'banners'];
   return valid.includes(hash as Tab) ? (hash as Tab) : 'events';
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = () => {
+  return (
+    <HelperProvider>
+      <AdminPanelInner />
+    </HelperProvider>
+  );
+};
+
+const GuiaTab: React.FC = () => {
+  const { helperOn, toggleHelper } = useHelper();
+  const [showEmoji, setShowEmoji] = useState(false);
+
+  function handleToggle() {
+    toggleHelper();
+    setShowEmoji(true);
+  }
+
+  return (
+    <ZineFrame bg="cream">
+      <h2 className="font-display text-2xl text-zine-burntOrange mb-3">Guia do Admin</h2>
+      <p className="font-body text-zine-burntOrange/80 mb-4 leading-relaxed">
+        Ative o modo guia para ver dicas em todas as abas do painel. Cada seção vai mostrar uma explicação simples do que faz e como usar.
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleToggle}
+          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${helperOn ? 'bg-zine-burntOrange' : 'bg-zine-burntOrange/30'}`}
+          aria-label={helperOn ? 'Desativar guia' : 'Ativar guia'}
+        >
+          <span
+            className={`inline-block h-6 w-6 rounded-full bg-zine-cream transition-transform ${helperOn ? 'translate-x-7' : 'translate-x-1'}`}
+          />
+        </button>
+        <span className="font-body text-zine-burntOrange font-bold">{helperOn ? 'ON' : 'OFF'}</span>
+        {showEmoji && (
+          <span
+            className="inline-block text-2xl animate-[emoji-pop_0.8s_ease-out_forwards]"
+            onAnimationEnd={() => setShowEmoji(false)}
+          >
+            😊
+          </span>
+        )}
+      </div>
+    </ZineFrame>
+  );
+};
+
+const AdminPanelInner: React.FC = () => {
   const idToken = useIdToken();
+  const { helperOn } = useHelper();
   const [tab, setTabState] = useState<Tab>(getHashTab);
 
   function setTab(t: Tab) {
@@ -53,87 +104,60 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     window.location.hash = t;
   }
 
+  const otherTabs: { key: Tab; label: string }[] = [
+    { key: 'events', label: 'Eventos' },
+    { key: 'photos', label: 'Fotos' },
+    { key: 'moderation', label: 'Moderação' },
+    { key: 'lojinha', label: 'Lojinha' },
+    { key: 'pix', label: 'PIX' },
+    { key: 'users', label: 'Usuários' },
+    { key: 'email', label: 'Email' },
+    { key: 'linktree', label: 'Links' },
+    { key: 'banners', label: 'Banners' },
+  ];
+
+  const guiaButton = (
+    <Button
+      key="guia"
+      role="tab"
+      aria-selected={tab === 'guia'}
+      onClick={() => setTab('guia')}
+      className={tab === 'guia' ? 'ring-4 ring-zine-burntOrange' : ''}
+    >
+      ❓ Guia
+    </Button>
+  );
+
   return (
     <div className="flex flex-col gap-4">
+      <style>{`
+        @keyframes emoji-pop {
+          0% { transform: scale(0); opacity: 1; }
+          50% { transform: scale(1.3); opacity: 1; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+      `}</style>
       <div
         role="tablist"
         aria-label="admin-tabs"
         className="flex flex-wrap gap-1.5 sm:gap-2 [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:text-xs sm:[&>button]:px-5 sm:[&>button]:py-2 sm:[&>button]:text-base"
       >
-        <Button
-          role="tab"
-          aria-selected={tab === 'events'}
-          onClick={() => setTab('events')}
-          className={tab === 'events' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Eventos
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'photos'}
-          onClick={() => setTab('photos')}
-          className={tab === 'photos' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Fotos
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'moderation'}
-          onClick={() => setTab('moderation')}
-          className={tab === 'moderation' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Moderação
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'lojinha'}
-          onClick={() => setTab('lojinha')}
-          className={tab === 'lojinha' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Lojinha
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'pix'}
-          onClick={() => setTab('pix')}
-          className={tab === 'pix' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          PIX
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'users'}
-          onClick={() => setTab('users')}
-          className={tab === 'users' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Usuários
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'email'}
-          onClick={() => setTab('email')}
-          className={tab === 'email' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Email
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'linktree'}
-          onClick={() => setTab('linktree')}
-          className={tab === 'linktree' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Links
-        </Button>
-        <Button
-          role="tab"
-          aria-selected={tab === 'banners'}
-          onClick={() => setTab('banners')}
-          className={tab === 'banners' ? 'ring-4 ring-zine-burntOrange' : ''}
-        >
-          Banners
-        </Button>
+        {helperOn && guiaButton}
+        {otherTabs.map(({ key, label }) => (
+          <Button
+            key={key}
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={tab === key ? 'ring-4 ring-zine-burntOrange' : ''}
+          >
+            {label}
+          </Button>
+        ))}
+        {!helperOn && guiaButton}
       </div>
 
+      {tab === 'guia' && <GuiaTab />}
       {tab === 'events' && <EventsTab idToken={idToken} />}
       {tab === 'photos' && <PhotosTab idToken={idToken} />}
       {tab === 'moderation' && <ModerationPanel idToken={idToken} />}
@@ -219,6 +243,7 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
   return (
     <ZineFrame bg="cream">
+      <HelperBox>Aqui você cria e gerencia os eventos do site. Use "Novo evento" para adicionar, ou clique em "editar" e "apagar" nos existentes.</HelperBox>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-2xl text-zine-burntOrange">Eventos</h2>
         <Button onClick={() => setCreating(true)}>Novo evento</Button>
@@ -284,6 +309,7 @@ const PhotosTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
   return (
     <div className="flex flex-col gap-4">
+      <HelperBox>Selecione um evento e faça upload de fotos para a galeria. Você também pode apagar fotos existentes.</HelperBox>
       <ZineFrame bg="cream">
         <label className="font-body text-zine-burntOrange flex flex-col gap-1">
           <span>Evento</span>

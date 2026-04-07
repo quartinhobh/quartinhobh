@@ -102,6 +102,7 @@ export const PublicProfile: React.FC = () => {
                     <img
                       src={album.coverUrl ?? ''}
                       alt={album.title}
+                      loading="lazy"
                       className="w-full h-full object-cover rounded-md"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />

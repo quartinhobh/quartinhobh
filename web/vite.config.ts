@@ -48,13 +48,22 @@ export default defineConfig({
         runtimeCaching: [
           {
             // API reads — network first, fall back to cache when offline.
-            urlPattern: ({ url }) =>
-              url.origin === self.location.origin && url.pathname.startsWith('/api/'),
+            urlPattern: /\/(auth|events|users|votes|moderation|photos|shop|linktree|banners|mb|lyrics)\b/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'quartinho-api',
               networkTimeoutSeconds: 5,
               expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // R2 / MinIO storage (avatars, banner images).
+            urlPattern: /r2\.cloudflarestorage\.com|localhost:9002/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'quartinho-r2',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

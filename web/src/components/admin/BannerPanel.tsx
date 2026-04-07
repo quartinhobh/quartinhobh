@@ -10,6 +10,7 @@ import {
   deactivateBanner,
   deleteBanner,
 } from '@/services/api';
+import HelperBox from '@/components/admin/HelperBox';
 import type { Banner, BannerRoute } from '@/types';
 
 const inputClass =
@@ -123,6 +124,7 @@ export const BannerPanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <HelperBox>Crie e gerencie banners para exibir no site. Escolha a rota, imagem e tempo de exibição.</HelperBox>
       {/* Create form */}
       <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Novo Banner</h3>
@@ -143,7 +145,7 @@ export const BannerPanel: React.FC = () => {
               />
             </div>
             {imagePreview && (
-              <img src={imagePreview} alt="Preview" className="w-full max-h-32 object-cover rounded border-2 border-zine-burntYellow" />
+              <img src={imagePreview} alt="Preview" loading="lazy" className="w-full max-h-32 object-cover rounded border-2 border-zine-burntYellow" />
             )}
             {!imageFile && (
               <input
@@ -158,6 +160,7 @@ export const BannerPanel: React.FC = () => {
               <p className="font-body text-xs text-zine-burntOrange/60">{imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)</p>
             )}
           </div>
+          <HelperBox>Texto alternativo descreve a imagem para leitores de tela e quando a imagem não carrega.</HelperBox>
           <input
             type="text"
             value={altText}
@@ -172,6 +175,7 @@ export const BannerPanel: React.FC = () => {
             placeholder="Link (opcional)"
             className={inputClass}
           />
+          <HelperBox>Se preenchido, o banner fecha sozinho depois de N segundos. Deixe vazio para o usuário fechar manualmente.</HelperBox>
           <input
             type="number"
             value={autoDismiss}
@@ -180,6 +184,7 @@ export const BannerPanel: React.FC = () => {
             className={inputClass}
             min={1}
           />
+          <HelperBox>Marque em quais páginas o banner vai aparecer. Pode selecionar mais de uma.</HelperBox>
           <div className="flex flex-wrap gap-3 py-1">
             {ALL_ROUTES.map(({ value, label }) => (
               <label key={value} className="flex items-center gap-1.5 font-body text-sm text-zine-burntOrange dark:text-zine-cream cursor-pointer">
@@ -218,6 +223,7 @@ export const BannerPanel: React.FC = () => {
                 <img
                   src={banner.imageUrl}
                   alt={banner.altText}
+                  loading="lazy"
                   className="w-24 h-14 object-cover rounded border-2 border-zine-burntYellow flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
