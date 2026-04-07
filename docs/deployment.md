@@ -8,6 +8,8 @@
 |---|---|---|
 | **Firebase** (Google) | Auth, Firestore, RTDB, Storage, Hosting | https://console.firebase.google.com |
 | **Render** | API backend (Express) | https://render.com |
+| **Cloudflare R2** | Armazenamento de fotos (S3-compatible) | https://dash.cloudflare.com |
+| **Brevo** | Email transacional + newsletter (free: 300/dia) | https://app.brevo.com |
 | **GitHub** | Código + CI/CD + secrets | https://github.com |
 
 ### Ferramentas locais
@@ -118,6 +120,11 @@ Render dashboard → teu service → **Environment** → adiciona:
 | `INITIAL_ADMIN_EMAIL` | `seu-email@gmail.com` | seu email Google (remover depois!) |
 | `MUSICBRAINZ_USER_AGENT` | `Quartinho/1.0 (email@dominio.com)` | qualquer email de contato |
 | `GENIUS_ACCESS_TOKEN` | *(opcional)* | https://genius.com/api-clients |
+| `BREVO_API_KEY` | `xkeysib-...` | https://app.brevo.com/settings/keys/api |
+| `BREVO_SENDER_EMAIL` | `afa7789@gmail.com` | Email verificado no Brevo (Settings → Senders) |
+| `BREVO_SENDER_NAME` | `Quartinho BH` | Nome que aparece como remetente |
+| `API_URL` | `https://teu-service.onrender.com` | URL pública da API (usada no link de unsubscribe) |
+| `FRONTEND_URL` | `https://teste-qbh.web.app` | URL do frontend (usada em links nos emails) |
 
 ### 2.3 Deploy Hook (pra CI/CD)
 Render → teu service → **Settings** → rola até **Deploy Hook** → copia a URL.
@@ -295,6 +302,10 @@ make e2e             # Playwright E2E (24 testes)
 - [ ] Admin promovido (`make admin EMAIL=...`)
 - [ ] Logou no app e vê botão "admin" no header
 - [ ] Removeu `INITIAL_ADMIN_EMAIL` do Render
+- [ ] Brevo: conta criada, API key gerada
+- [ ] Brevo: email remetente verificado (Settings → Senders)
+- [ ] Render: env vars do Brevo adicionadas (`BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `API_URL`, `FRONTEND_URL`)
+- [ ] Email de teste enviado com sucesso
 - [ ] Testou no celular (PWA install)
 
 ---
@@ -310,3 +321,7 @@ make e2e             # Playwright E2E (24 testes)
 | Firestore vazio após login | Service account sem permissão | Verifica `FIREBASE_PRIVATE_KEY` no Render |
 | Admin não aparece | Doc `users/:uid` com `role: user` | `make admin EMAIL=...` |
 | `bun: script not found` no Render | Start Command errado | Deve ser `bun run api/src/index.ts` |
+| Email não chega | Sender não verificado no Brevo | Brevo → Settings → Senders → verificar email |
+| Email cai no spam | Plano free sem domínio próprio | Verificar domínio no Brevo (DNS SPF/DKIM) |
+| `BREVO_API_KEY not set` nos logs | Env var faltando no Render | Adicionar nas Environment Variables |
+| Limite diário atingido | 300 emails/dia (free) | Esperar amanhã ou migrar plano pago |

@@ -9,6 +9,8 @@ export interface User {
   displayName: string;
   role: UserRole;
   linkedSessionId: string | null;
+  newsletterOptIn?: boolean;
+  groups?: string[];
   createdAt: number;
   updatedAt: number;
 }

@@ -14,7 +14,9 @@ interface ApiCacheState {
   invalidatePrefix: (prefix: string) => void;
 }
 
-const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
+// TTL padrão: 3 horas — cobre a duração de um evento.
+// Dados que mudam frequentemente (votos, moderação) passam TTL próprio.
+const DEFAULT_TTL = 3 * 60 * 60 * 1000; // 3 hours
 
 export const useApiCache = create<ApiCacheState>()(
   persist(

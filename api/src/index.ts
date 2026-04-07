@@ -11,6 +11,7 @@ import { moderationRouter } from './routes/moderation';
 import { photosRouter } from './routes/photos';
 import { shopRouter } from './routes/shop';
 import { usersRouter } from './routes/users';
+import { emailRouter } from './routes/email';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -39,6 +40,7 @@ app.use('/moderation', moderationRouter);
 app.use('/photos', photosRouter);
 app.use('/shop', shopRouter);
 app.use('/users', usersRouter);
+app.use('/email', emailRouter);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {

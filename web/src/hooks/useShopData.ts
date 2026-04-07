@@ -19,7 +19,7 @@ interface ShopCacheData {
   pix: PixConfig;
 }
 
-const SHOP_TTL = 5 * 60 * 1000; // 5 minutes
+const SHOP_TTL = 3 * 60 * 60 * 1000; // 3 hours — produtos raramente mudam durante evento
 
 async function fetchShopData(token: string | null): Promise<ShopCacheData> {
   const [prods, cfg] = await Promise.all([

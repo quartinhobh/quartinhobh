@@ -528,3 +528,125 @@ export async function deleteInvite(email: string, idToken: string): Promise<void
   });
   if (!res.ok) throw new Error(`DELETE /users/invites failed: ${res.status}`);
 }
+
+// ── Email / Newsletter ────────────────────────────────────────────────
+
+export interface EmailLimits {
+  dailyLimit: number;
+  remaining: number;
+  maxGroupSize: number;
+}
+
+export async function fetchEmailLimits(idToken: string): Promise<EmailLimits> {
+  const res = await fetch(`${API_URL}/email/limits`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /email/limits failed: ${res.status}`);
+  return (await res.json()) as EmailLimits;
+}
+
+export interface ContactGroup {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export async function fetchContactGroups(idToken: string): Promise<ContactGroup[]> {
+  const res = await fetch(`${API_URL}/email/groups`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /email/groups failed: ${res.status}`);
+  const body = (await res.json()) as { groups: ContactGroup[] };
+  return body.groups;
+}
+
+export async function createContactGroup(
+  name: string,
+  description: string,
+  idToken: string,
+): Promise<ContactGroup> {
+  const res = await fetch(`${API_URL}/email/groups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ name, description }),
+  });
+  if (!res.ok) throw new Error(`POST /email/groups failed: ${res.status}`);
+  return (await res.json()) as ContactGroup;
+}
+
+export async function deleteContactGroup(id: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/email/groups/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /email/groups failed: ${res.status}`);
+}
+
+export async function sendNewsletter(
+  data: { subject: string; html: string; includeGroups: string[]; excludeGroups: string[] },
+  idToken: string,
+): Promise<{ sentCount: number }> {
+  const res = await fetch(`${API_URL}/email/newsletter`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`POST /email/newsletter failed: ${res.status}`);
+  return (await res.json()) as { sentCount: number };
+}
+
+export async function sendSingleEmail(
+  data: { to: string; subject: string; html: string },
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/email/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`POST /email/send failed: ${res.status}`);
+}
+
+export interface EmailCampaign {
+  id: string;
+  subject: string;
+  status: string;
+  sentCount: number;
+  sentAt: number;
+  createdAt: number;
+}
+
+export async function fetchCampaigns(idToken: string): Promise<EmailCampaign[]> {
+  const res = await fetch(`${API_URL}/email/campaigns`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /email/campaigns failed: ${res.status}`);
+  const body = (await res.json()) as { campaigns: EmailCampaign[] };
+  return body.campaigns;
+}
+
+export async function updateUserGroups(
+  userId: string,
+  groups: string[],
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/email/users/${encodeURIComponent(userId)}/groups`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ groups }),
+  });
+  if (!res.ok) throw new Error(`PUT /email/users/groups failed: ${res.status}`);
+}
+
+export async function updateUserNewsletter(
+  userId: string,
+  optIn: boolean,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/email/users/${encodeURIComponent(userId)}/newsletter`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ optIn }),
+  });
+  if (!res.ok) throw new Error(`PUT /email/users/newsletter failed: ${res.status}`);
+}

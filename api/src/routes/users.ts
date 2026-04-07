@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roleCheck';
 import { adminDb } from '../config/firebase';
 import type { User, UserRole } from '../types';
+import { sendEmail, buildRoleInviteEmail, buildRolePromotionEmail } from '../services/emailService';
 
 export const usersRouter: Router = Router();
 
@@ -41,7 +42,20 @@ usersRouter.put(
         res.status(404).json({ error: 'user_not_found' });
         return;
       }
+      const prevRole = (snap.data() as User).role;
       await ref.update({ role, updatedAt: Date.now() });
+
+      // Auto-email when promoting to admin or moderator
+      if ((role === 'admin' || role === 'moderator') && prevRole !== role) {
+        const email = (snap.data() as User).email;
+        if (email) {
+          const roleName = role === 'admin' ? 'admin' : 'moderador';
+          sendEmail(email, `Você agora é ${roleName} no Quartinho BH!`, buildRolePromotionEmail(role)).catch((err) =>
+            console.error('[users] role promotion email failed:', err),
+          );
+        }
+      }
+
       res.status(200).json({ ok: true });
     } catch {
       res.status(500).json({ error: 'update_role_failed' });
@@ -79,6 +93,13 @@ usersRouter.post(
     }
     try {
       await adminDb.collection('role_invites').doc(email).set({ role, createdAt: Date.now() });
+
+      // Envia email de convite automaticamente
+      const roleName = role === 'admin' ? 'admin' : 'moderador';
+      sendEmail(email, `Convite: você é ${roleName} no Quartinho BH`, buildRoleInviteEmail(role)).catch((err) =>
+        console.error('[users] invite email failed:', err),
+      );
+
       res.status(201).json({ ok: true });
     } catch {
       res.status(500).json({ error: 'create_invite_failed' });

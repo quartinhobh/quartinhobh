@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchTallies, fetchUserVote, postVote } from '@/services/api';
 import { useApiCache } from '@/store/apiCache';
+import { useOfflineQueue } from '@/store/offlineQueue';
 import type { UserVote, VoteBucket, VoteTallies } from '@/types';
 
 export interface UseVotesResult {
@@ -87,6 +88,7 @@ export function useVotes(
   uid: string | null,
 ): UseVotesResult {
   const cache = useApiCache();
+  const offlineQueue = useOfflineQueue();
   const cacheKey = eventId ? `votes:${eventId}` : null;
 
   const cached = cacheKey ? cache.get<VotesCacheData>(cacheKey, VOTES_TTL) : null;
@@ -167,12 +169,24 @@ export function useVotes(
         cache.set(cacheKey!, result);
         setData(result);
       } catch (err) {
-        setData(priorData);
-        setError(err instanceof Error ? err.message : 'vote_failed');
-        throw err;
+        const isNetworkError =
+          !navigator.onLine ||
+          (err instanceof TypeError && err.message.includes('fetch'));
+
+        if (isNetworkError) {
+          // Offline — salvar na fila, manter optimistic update na tela
+          offlineQueue.addVote({ eventId, favoriteTrackId, leastLikedTrackId });
+          // Persiste o optimistic no cache pra sobreviver reload
+          if (data) cache.set(cacheKey!, data);
+        } else {
+          // Erro real do servidor — reverter
+          setData(priorData);
+          setError(err instanceof Error ? err.message : 'vote_failed');
+          throw err;
+        }
       }
     },
-    [eventId, idToken, uid, data, cache, cacheKey],
+    [eventId, idToken, uid, data, cache, cacheKey, offlineQueue],
   );
 
   return {
