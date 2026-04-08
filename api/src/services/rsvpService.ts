@@ -156,7 +156,7 @@ export async function submitRsvp(
     };
 
     doc.entries[userId] = entry;
-    if (status === 'confirmed') doc.confirmedCount += 1;
+    if (status === 'confirmed') doc.confirmedCount += wantsPlusOne ? 2 : 1;
     if (status === 'waitlisted') doc.waitlistCount += 1;
     doc.updatedAt = now;
 
@@ -192,7 +192,10 @@ export async function cancelRsvp(
     entry.updatedAt = Date.now();
     doc.entries[userId] = entry;
 
-    if (wasConfirmed) doc.confirmedCount = Math.max(0, doc.confirmedCount - 1);
+    if (wasConfirmed) {
+      const seats = entry.plusOne ? 2 : 1;
+      doc.confirmedCount = Math.max(0, doc.confirmedCount - seats);
+    }
     if (wasWaitlisted) doc.waitlistCount = Math.max(0, doc.waitlistCount - 1);
 
     // Auto-promote from waitlist if a confirmed spot opened
@@ -203,7 +206,7 @@ export async function cancelRsvp(
         next.entry.status = 'confirmed';
         next.entry.updatedAt = Date.now();
         doc.entries[next.userId] = next.entry;
-        doc.confirmedCount += 1;
+        doc.confirmedCount += next.entry.plusOne ? 2 : 1;
         doc.waitlistCount = Math.max(0, doc.waitlistCount - 1);
         promotedUserId = next.userId;
       }
@@ -347,14 +350,25 @@ export async function getAdminList(eventId: string): Promise<AdminRsvpEntry[]> {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
+function csvField(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
 export function exportCsv(entries: AdminRsvpEntry[]): string {
   const header = 'nome,email,status,plus_one,nome_acompanhante,data_rsvp';
   const rows = entries.map((e) => {
     const date = new Date(e.createdAt).toISOString();
-    const name = e.displayName.replace(/,/g, ' ');
-    const email = e.email ?? '';
-    const plusOneName = e.plusOneName?.replace(/,/g, ' ') ?? '';
-    return `${name},${email},${e.status},${e.plusOne ? 'sim' : 'não'},${plusOneName},${date}`;
+    return [
+      csvField(e.displayName),
+      csvField(e.email ?? ''),
+      e.status,
+      e.plusOne ? 'sim' : 'não',
+      csvField(e.plusOneName ?? ''),
+      date,
+    ].join(',');
   });
   return [header, ...rows].join('\n');
 }

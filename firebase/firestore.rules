@@ -79,6 +79,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // RSVPs: authenticated read; writes go through server.
+    match /rsvps/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if false; // server-side only
+    }
+
+    // Email templates: admin read/write only (managed via admin panel).
+    match /emailTemplates/{templateId} {
+      allow read: if isAdmin();
+      allow write: if false; // server-side only
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
