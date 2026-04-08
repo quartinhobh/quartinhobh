@@ -1,0 +1,112 @@
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+vi.mock('@/services/api', () => ({
+  fetchAdminRsvpList: vi.fn(),
+  approveRejectRsvp: vi.fn(),
+  exportRsvpCsv: vi.fn(),
+}));
+
+import { RsvpPanel } from '@/components/admin/RsvpPanel';
+import { fetchAdminRsvpList, approveRejectRsvp } from '@/services/api';
+import type { AdminRsvpEntry } from '@/types';
+
+const makeMocks = () => ({
+  fetchAdminRsvpList: fetchAdminRsvpList as Mock,
+  approveRejectRsvp: approveRejectRsvp as Mock,
+});
+
+const confirmedEntry: AdminRsvpEntry = {
+  userId: 'u1',
+  displayName: 'Alice',
+  email: 'alice@example.com',
+  avatarUrl: null,
+  status: 'confirmed',
+  plusOne: false,
+  plusOneName: null,
+  createdAt: 1000000,
+  updatedAt: 1000000,
+};
+
+const pendingEntry: AdminRsvpEntry = {
+  userId: 'u2',
+  displayName: 'Bruno',
+  email: 'bruno@example.com',
+  avatarUrl: null,
+  status: 'pending_approval',
+  plusOne: false,
+  plusOneName: null,
+  createdAt: 1000000,
+  updatedAt: 1000000,
+};
+
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+
+describe('RsvpPanel', () => {
+  it('shows loading state initially, then renders entries after fetch', async () => {
+    const { fetchAdminRsvpList: mockFetch } = makeMocks();
+    mockFetch.mockResolvedValue({ entries: [confirmedEntry] });
+
+    render(<RsvpPanel eventId="evt1" idToken="tok" />);
+
+    expect(screen.getByText(/carregando/i)).toBeInTheDocument();
+
+    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    expect(mockFetch).toHaveBeenCalledWith('evt1', 'tok');
+  });
+
+  it('shows "Nenhum registro." when no entries', async () => {
+    const { fetchAdminRsvpList: mockFetch } = makeMocks();
+    mockFetch.mockResolvedValue({ entries: [] });
+
+    render(<RsvpPanel eventId="evt1" idToken="tok" />);
+
+    await waitFor(() => expect(screen.getByText('Nenhum registro.')).toBeInTheDocument());
+  });
+
+  it('filter tabs work — clicking "Confirmados" filters to confirmed only', async () => {
+    const { fetchAdminRsvpList: mockFetch } = makeMocks();
+    mockFetch.mockResolvedValue({ entries: [confirmedEntry, pendingEntry] });
+
+    render(<RsvpPanel eventId="evt1" idToken="tok" />);
+
+    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    expect(screen.getByText('Bruno')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmados' }));
+
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('Bruno')).not.toBeInTheDocument();
+  });
+
+  it('shows approve/reject buttons for pending_approval entries', async () => {
+    const { fetchAdminRsvpList: mockFetch } = makeMocks();
+    mockFetch.mockResolvedValue({ entries: [pendingEntry] });
+
+    render(<RsvpPanel eventId="evt1" idToken="tok" />);
+
+    await waitFor(() => expect(screen.getByText('Bruno')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /aprovar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /recusar/i })).toBeInTheDocument();
+  });
+
+  it('calls approveRejectRsvp when approve button clicked', async () => {
+    const { fetchAdminRsvpList: mockFetch, approveRejectRsvp: mockAction } = makeMocks();
+    mockFetch.mockResolvedValue({ entries: [pendingEntry] });
+    mockAction.mockResolvedValue({ entry: { ...pendingEntry, status: 'confirmed' } });
+
+    render(<RsvpPanel eventId="evt1" idToken="tok" />);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /aprovar/i })).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: /aprovar/i }));
+
+    await waitFor(() =>
+      expect(mockAction).toHaveBeenCalledWith('evt1', 'u2', 'confirmed', 'tok'),
+    );
+  });
+});
