@@ -10,8 +10,10 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 
 // Mock scrollIntoView which jsdom doesn't implement
 beforeAll(() => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (HTMLElement.prototype as any).scrollIntoView = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    writable: true,
+    value: vi.fn(),
+  });
 });
 
 describe('ChatRoom', () => {

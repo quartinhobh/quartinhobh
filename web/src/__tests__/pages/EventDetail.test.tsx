@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { EventDetail } from '@/pages/EventDetail';
+import type { Mock } from 'vitest';
 import type { Event, MusicBrainzRelease, Photo, VoteTallies } from '@/types';
 
 vi.mock('@/services/api', () => ({
@@ -71,10 +72,10 @@ const photos: Photo[] = [
 describe('EventDetail page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fetchEventById as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(event);
-    (fetchMusicBrainzAlbum as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(album);
-    (fetchTallies as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(tallies);
-    (fetchPhotos as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(photos);
+    (fetchEventById as Mock).mockResolvedValue(event);
+    (fetchMusicBrainzAlbum as Mock).mockResolvedValue(album);
+    (fetchTallies as Mock).mockResolvedValue(tallies);
+    (fetchPhotos as Mock).mockResolvedValue(photos);
   });
 
   it('renders album, tracks, votes, and category1 photos by default', async () => {

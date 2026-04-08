@@ -20,7 +20,7 @@ const expiringStorage: PersistStorage<unknown> = {
         localStorage.removeItem(name);
         return null;
       }
-      return parsed as unknown as StorageValue<unknown>;
+      return { state: parsed.state, version: parsed.version } as StorageValue<unknown>;
     } catch {
       return null;
     }
@@ -102,8 +102,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'quartinho:session',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      storage: expiringStorage as any,
+      storage: expiringStorage as PersistStorage<Partial<SessionState>>,
       // Only persist identity fields, not actions.
       partialize: (s) => ({
         sessionId: s.sessionId,

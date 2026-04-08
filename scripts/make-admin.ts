@@ -73,8 +73,8 @@ try {
     });
     console.log(`✓ users/${user.uid} criado com role=admin`);
   }
-} catch (e: any) {
-  if (e?.code === 'auth/user-not-found') {
+} catch (e: unknown) {
+  if (e && typeof e === 'object' && 'code' in e && e.code === 'auth/user-not-found') {
     console.log('User não existe no Auth ainda. Criando role_invite...');
     await db.collection('role_invites').doc(email).set({ role: 'admin' });
     console.log(`✓ role_invites/${email} criado — vira admin no próximo login`);
