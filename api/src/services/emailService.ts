@@ -359,6 +359,126 @@ export function buildRoleInviteEmail(role: string): string {
   `);
 }
 
+// ── RSVP emails ─────────────────────────────────────────────────────
+
+/** Confirmação de presença. */
+export function buildRsvpConfirmationEmail(eventTitle: string, eventDate: string): string {
+  const { frontendUrl } = getUrls();
+  return wrapTransactionalTemplate(`
+    <h1 style="color:${COLORS.burntOrange};font-size:24px;margin:0 0 16px;font-family:Georgia,serif;">
+      tá confirmado! 🎶
+    </h1>
+    <p>
+      Sua presença no <strong style="color:${COLORS.burntOrange};">${eventTitle}</strong> está confirmada.
+    </p>
+    <p style="color:${COLORS.textMuted};">
+      📅 ${eventDate}
+    </p>
+    ${emailButton('ver detalhes do evento', frontendUrl)}
+    <p style="color:${COLORS.textMuted};font-size:14px;">
+      Até lá! Qualquer dúvida é só mandar mensagem no Instagram.
+    </p>
+  `);
+}
+
+/** Entrada na fila de espera. */
+export function buildRsvpWaitlistEmail(eventTitle: string, eventDate: string): string {
+  const { frontendUrl } = getUrls();
+  return wrapTransactionalTemplate(`
+    <h1 style="color:${COLORS.burntOrange};font-size:24px;margin:0 0 16px;font-family:Georgia,serif;">
+      tá na fila
+    </h1>
+    <p>
+      Você entrou na fila de espera para o <strong style="color:${COLORS.burntOrange};">${eventTitle}</strong>.
+    </p>
+    <p style="color:${COLORS.textMuted};">
+      📅 ${eventDate}
+    </p>
+    <p>
+      Se abrir uma vaga, você será avisado por aqui. Fique de olho!
+    </p>
+    ${emailButton('acompanhar minha inscrição', frontendUrl)}
+  `);
+}
+
+/** Promovido da fila para confirmado. */
+export function buildRsvpPromotedEmail(eventTitle: string, eventDate: string): string {
+  const { frontendUrl } = getUrls();
+  return wrapTransactionalTemplate(`
+    <h1 style="color:${COLORS.burntOrange};font-size:24px;margin:0 0 16px;font-family:Georgia,serif;">
+      abriu vaga! 🎉
+    </h1>
+    <p>
+      Boa notícia: você saiu da fila e sua presença no <strong style="color:${COLORS.burntOrange};">${eventTitle}</strong> está confirmada!
+    </p>
+    <p style="color:${COLORS.textMuted};">
+      📅 ${eventDate}
+    </p>
+    ${emailButton('ver detalhes do evento', frontendUrl)}
+    <p style="color:${COLORS.textMuted};font-size:14px;">
+      Você apareceu bem cedinho na fila. Mereceu!
+    </p>
+  `);
+}
+
+/** Lembrete (enviado um dia antes). */
+export function buildRsvpReminderEmail(eventTitle: string, eventDate: string, eventTime: string): string {
+  const { frontendUrl } = getUrls();
+  return wrapTransactionalTemplate(`
+    <h1 style="color:${COLORS.burntOrange};font-size:24px;margin:0 0 16px;font-family:Georgia,serif;">
+      amanhã tem!
+    </h1>
+    <p>
+      Só lembrando que amanhã tem <strong style="color:${COLORS.burntOrange};">${eventTitle}</strong>.
+    </p>
+    <p style="color:${COLORS.textMuted};">
+      📅 ${eventDate} às ${eventTime}
+    </p>
+    ${emailButton('ver detalhes', frontendUrl)}
+    <p style="color:${COLORS.textMuted};font-size:14px;">
+      Não esquece!
+    </p>
+  `);
+}
+
+/** Email com endereço do evento. */
+export function buildRsvpLocationEmail(eventTitle: string, location: string): string {
+  const { frontendUrl } = getUrls();
+  return wrapTransactionalTemplate(`
+    <h1 style="color:${COLORS.burntOrange};font-size:24px;margin:0 0 16px;font-family:Georgia,serif;">
+      o endereço é...
+    </h1>
+    <p>
+      O <strong style="color:${COLORS.burntOrange};">${eventTitle}</strong> vai acontecer em:
+    </p>
+    <p style="font-size:18px;font-weight:bold;color:${COLORS.burntOrange};padding:12px;border-left:4px solid ${COLORS.burntYellow};">
+      ${location}
+    </p>
+    ${emailButton('ver no mapa', `https://maps.google.com/?q=${encodeURIComponent(location)}`)}
+    <p style="color:${COLORS.textMuted};font-size:14px;">
+      Qualquer dúvida é só chamar no Instagram. Até lá!
+    </p>
+    ${emailButton('ver o evento', frontendUrl)}
+  `);
+}
+
+/** Inscrição recusada. */
+export function buildRsvpRejectedEmail(eventTitle: string): string {
+  const { frontendUrl } = getUrls();
+  return wrapTransactionalTemplate(`
+    <h1 style="color:${COLORS.burntOrange};font-size:24px;margin:0 0 16px;font-family:Georgia,serif;">
+      dessa vez não rolou
+    </h1>
+    <p>
+      Infelizmente sua inscrição para o <strong style="color:${COLORS.burntOrange};">${eventTitle}</strong> não foi aprovada.
+    </p>
+    <p style="color:${COLORS.textMuted};">
+      Não se preocupa — tem mais eventos por vir. Fica de olho!
+    </p>
+    ${emailButton('ver próximos eventos', frontendUrl)}
+  `);
+}
+
 /** Email de promoção (usuário já existente que foi promovido). */
 export function buildRolePromotionEmail(role: string): string {
   const { frontendUrl } = getUrls();

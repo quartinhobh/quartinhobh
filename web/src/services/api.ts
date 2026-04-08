@@ -1,4 +1,5 @@
 import type {
+  AdminRsvpEntry,
   Ban,
   Banner,
   BannerRoute,
@@ -1049,4 +1050,48 @@ export async function updateRsvpPlusOne(
   });
   if (!res.ok) throw new Error(`PUT rsvp plus-one failed: ${res.status}`);
   return (await res.json()) as { entry: RsvpEntry };
+}
+
+// ── RSVP Admin ───────────────────────────────────────────────────────
+
+export async function fetchAdminRsvpList(
+  eventId: string,
+  idToken: string,
+): Promise<{ entries: AdminRsvpEntry[] }> {
+  const res = await fetch(
+    `${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/admin`,
+    { headers: { Authorization: `Bearer ${idToken}` } },
+  );
+  if (!res.ok) throw new Error(`GET rsvp/admin failed: ${res.status}`);
+  return (await res.json()) as { entries: AdminRsvpEntry[] };
+}
+
+export async function approveRejectRsvp(
+  eventId: string,
+  userId: string,
+  status: 'confirmed' | 'rejected',
+  idToken: string,
+): Promise<{ entry: RsvpEntry }> {
+  const res = await fetch(
+    `${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/admin/${encodeURIComponent(userId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({ status }),
+    },
+  );
+  if (!res.ok) throw new Error(`PUT rsvp/admin/${userId} failed: ${res.status}`);
+  return (await res.json()) as { entry: RsvpEntry };
+}
+
+export async function exportRsvpCsv(
+  eventId: string,
+  idToken: string,
+): Promise<string> {
+  const res = await fetch(
+    `${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/admin/export`,
+    { headers: { Authorization: `Bearer ${idToken}` } },
+  );
+  if (!res.ok) throw new Error(`GET rsvp/admin/export failed: ${res.status}`);
+  return res.text();
 }

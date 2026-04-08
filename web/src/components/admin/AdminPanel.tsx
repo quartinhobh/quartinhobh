@@ -9,6 +9,7 @@ import UsersPanel from '@/components/admin/UsersPanel';
 import NewsletterPanel from '@/components/admin/NewsletterPanel';
 import LinkTreePanel from '@/components/admin/LinkTreePanel';
 import BannerPanel from '@/components/admin/BannerPanel';
+import RsvpPanel from '@/components/admin/RsvpPanel';
 import { CanShow } from '@/components/admin/CanShow';
 import HelperBox from '@/components/admin/HelperBox';
 import { HelperProvider, useHelper } from '@/components/admin/HelperContext';
@@ -32,7 +33,7 @@ export interface AdminPanelProps {
   idToken?: string | null;
 }
 
-type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'linktree' | 'banners';
+type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'linktree' | 'banners' | 'presenca';
 
 /**
  * AdminPanel — three-tab admin dashboard:
@@ -43,7 +44,7 @@ type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'us
  */
 function getHashTab(): Tab {
   const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'linktree', 'banners'];
+  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'linktree', 'banners', 'presenca'];
   return valid.includes(hash as Tab) ? (hash as Tab) : 'events';
 }
 
@@ -95,6 +96,52 @@ const GuiaTab: React.FC = () => {
   );
 };
 
+const PresencaTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventId, setEventId] = useState<string>('');
+
+  useEffect(() => {
+    void fetchEvents().then((list) => {
+      const arr = (list ?? []).filter((e) => e.status === 'upcoming' || e.status === 'live');
+      setEvents(arr);
+      if (arr.length > 0 && !eventId) setEventId(arr[0]!.id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!idToken) {
+    return (
+      <ZineFrame bg="cream">
+        <p className="font-body italic text-zine-burntOrange/70">Sessão expirada. Recarregue a página.</p>
+      </ZineFrame>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ZineFrame bg="cream">
+        <label className="font-body text-zine-burntOrange flex flex-col gap-1">
+          <span>Evento</span>
+          <select
+            aria-label="presenca-event-select"
+            value={eventId}
+            onChange={(e) => setEventId(e.target.value)}
+            className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2"
+          >
+            {events.length === 0 && <option value="">Nenhum evento ativo</option>}
+            {events.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.title} ({e.date})
+              </option>
+            ))}
+          </select>
+        </label>
+      </ZineFrame>
+      {eventId && <RsvpPanel eventId={eventId} idToken={idToken} />}
+    </div>
+  );
+};
+
 const AdminPanelInner: React.FC = () => {
   const idToken = useIdToken();
   const { helperOn } = useHelper();
@@ -115,6 +162,7 @@ const AdminPanelInner: React.FC = () => {
     { key: 'email', label: 'Email' },
     { key: 'linktree', label: 'Links' },
     { key: 'banners', label: 'Banners' },
+    { key: 'presenca', label: 'Presença' },
   ];
 
   const guiaButton = (
@@ -168,6 +216,7 @@ const AdminPanelInner: React.FC = () => {
       {tab === 'email' && <NewsletterPanel />}
       {tab === 'linktree' && <LinkTreePanel />}
       {tab === 'banners' && <BannerPanel />}
+      {tab === 'presenca' && <PresencaTab idToken={idToken} />}
       <CanShow />
       <p className="text-right">
         <a href="https://github.com/quartinhobh/pwa_web" target="_blank" rel="noopener noreferrer" className="font-body text-xs text-zine-burntOrange/30 hover:text-zine-burntOrange/60 underline inline-flex items-center gap-1">

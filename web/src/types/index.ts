@@ -202,6 +202,13 @@ export interface RsvpEntry {
   updatedAt: number;
 }
 
+export interface AdminRsvpEntry extends RsvpEntry {
+  userId: string;
+  displayName: string;
+  email: string | null;
+  avatarUrl: string | null;
+}
+
 export interface RsvpSummary {
   confirmedCount: number;
   waitlistCount: number;

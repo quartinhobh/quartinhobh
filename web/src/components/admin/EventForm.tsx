@@ -5,7 +5,7 @@ import { auth } from '@/services/firebase';
 import { createEvent, updateEvent, searchMusicBrainz, type MbSearchResult } from '@/services/api';
 import { useIdToken } from '@/hooks/useIdToken';
 import HelperBox from '@/components/admin/HelperBox';
-import type { Event } from '@/types';
+import type { Event, RsvpApprovalMode } from '@/types';
 
 export interface EventFormProps {
   mode: 'create' | 'edit';
@@ -37,6 +37,22 @@ export const EventForm: React.FC<EventFormProps> = ({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── RSVP config ─────────────────────────────────────────────────────
+  const [rsvpOpen, setRsvpOpen] = useState(false);
+  const [rsvpEnabled, setRsvpEnabled] = useState(initial?.rsvp?.enabled ?? false);
+  const [rsvpCapacity, setRsvpCapacity] = useState<string>(
+    initial?.rsvp?.capacity != null ? String(initial.rsvp.capacity) : '',
+  );
+  const [rsvpWaitlist, setRsvpWaitlist] = useState(initial?.rsvp?.waitlistEnabled ?? false);
+  const [rsvpPlusOne, setRsvpPlusOne] = useState(initial?.rsvp?.plusOneAllowed ?? false);
+  const [rsvpApproval, setRsvpApproval] = useState<RsvpApprovalMode>(initial?.rsvp?.approvalMode ?? 'auto');
+  const [rsvpOpensAt, setRsvpOpensAt] = useState<string>(
+    initial?.rsvp?.opensAt ? new Date(initial.rsvp.opensAt).toISOString().slice(0, 16) : '',
+  );
+  const [rsvpClosesAt, setRsvpClosesAt] = useState<string>(
+    initial?.rsvp?.closesAt ? new Date(initial.rsvp.closesAt).toISOString().slice(0, 16) : '',
+  );
 
   // ── Album search ───────────────────────────────────────────────────
   const [albumQuery, setAlbumQuery] = useState('');
@@ -89,11 +105,21 @@ export const EventForm: React.FC<EventFormProps> = ({
         .split('\n').map((l) => l.trim()).filter(Boolean)
         .map((l) => { const [label, url] = l.split('|'); return { label: (label ?? '').trim(), url: (url ?? '').trim() }; });
       const images = extrasImages.split('\n').map((s) => s.trim()).filter(Boolean);
+      const rsvp = rsvpEnabled ? {
+        enabled: true,
+        capacity: rsvpCapacity ? Number(rsvpCapacity) : null,
+        waitlistEnabled: rsvpWaitlist,
+        plusOneAllowed: rsvpPlusOne,
+        approvalMode: rsvpApproval,
+        opensAt: rsvpOpensAt ? new Date(rsvpOpensAt).getTime() : null,
+        closesAt: rsvpClosesAt ? new Date(rsvpClosesAt).getTime() : null,
+      } : { enabled: false, capacity: null, waitlistEnabled: false, plusOneAllowed: false, approvalMode: 'auto' as const, opensAt: null, closesAt: null };
       const payload = {
         mbAlbumId, title, date, startTime, endTime,
         location: location || null,
         extras: { text: extrasText, links, images },
         spotifyPlaylistUrl: spotifyPlaylistUrl || null,
+        rsvp,
       };
       const saved = mode === 'create'
         ? await createEvent(payload, token)
@@ -216,6 +242,117 @@ export const EventForm: React.FC<EventFormProps> = ({
           <span>Spotify Playlist URL</span>
           <input aria-label="spotifyPlaylistUrl" value={spotifyPlaylistUrl} onChange={(e) => setSpotifyPlaylistUrl(e.target.value)} className={inputClass} />
         </label>
+
+        {/* RSVP config */}
+        <div className="border-2 border-dashed border-zine-burntYellow">
+          <button
+            type="button"
+            onClick={() => setRsvpOpen((v) => !v)}
+            className="w-full text-left px-3 py-2 font-body font-bold text-zine-burntOrange flex items-center justify-between"
+          >
+            <span>RSVP</span>
+            <span className="text-xs text-zine-burntOrange/60">{rsvpOpen ? '▲ fechar' : '▼ abrir'}</span>
+          </button>
+          {rsvpOpen && (
+            <div className="px-3 pb-3 flex flex-col gap-3">
+              <label className="font-body text-zine-burntOrange flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="rsvp-enabled"
+                  checked={rsvpEnabled}
+                  onChange={(e) => setRsvpEnabled(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span>Ativar RSVP</span>
+              </label>
+
+              {rsvpEnabled && (
+                <>
+                  <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
+                    <span>Capacidade (vazio = ilimitado)</span>
+                    <input
+                      type="number"
+                      aria-label="rsvp-capacity"
+                      value={rsvpCapacity}
+                      onChange={(e) => setRsvpCapacity(e.target.value)}
+                      min={1}
+                      placeholder="ex: 30"
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <label className="font-body text-zine-burntOrange flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      aria-label="rsvp-waitlist"
+                      checked={rsvpWaitlist}
+                      onChange={(e) => setRsvpWaitlist(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span>Fila de espera</span>
+                  </label>
+
+                  <label className="font-body text-zine-burntOrange flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      aria-label="rsvp-plusone"
+                      checked={rsvpPlusOne}
+                      onChange={(e) => setRsvpPlusOne(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span>Permitir +1</span>
+                  </label>
+
+                  <fieldset className="flex flex-col gap-1">
+                    <legend className="font-body text-zine-burntOrange mb-1">Aprovação</legend>
+                    <label className="font-body text-zine-burntOrange flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="rsvp-approval"
+                        value="auto"
+                        checked={rsvpApproval === 'auto'}
+                        onChange={() => setRsvpApproval('auto')}
+                      />
+                      <span>Automática</span>
+                    </label>
+                    <label className="font-body text-zine-burntOrange flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="rsvp-approval"
+                        value="manual"
+                        checked={rsvpApproval === 'manual'}
+                        onChange={() => setRsvpApproval('manual')}
+                      />
+                      <span>Manual</span>
+                    </label>
+                  </fieldset>
+
+                  <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
+                    <span>Abre em (opcional)</span>
+                    <input
+                      type="datetime-local"
+                      aria-label="rsvp-opens-at"
+                      value={rsvpOpensAt}
+                      onChange={(e) => setRsvpOpensAt(e.target.value)}
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
+                    <span>Fecha em (opcional)</span>
+                    <input
+                      type="datetime-local"
+                      aria-label="rsvp-closes-at"
+                      value={rsvpClosesAt}
+                      onChange={(e) => setRsvpClosesAt(e.target.value)}
+                      className={inputClass}
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {error && (
           <p role="alert" className="font-body text-zine-burntOrange">{error}</p>
