@@ -86,7 +86,7 @@ export const UsersPanel: React.FC = () => {
 
   return (
     <>
-      <HelperBox>Gerencie permissões e papéis dos usuários. Convide novos admins ou moderadores por email.</HelperBox>
+      <HelperBox>Gerencie permissões dos usuários. Admin tem acesso total ao painel. Moderador pode gerenciar o chat e banir usuários. Usuário é o papel padrão de quem se cadastra. Use o convite por email pra adicionar admins antes deles criarem conta.</HelperBox>
       {/* Invite by email */}
       <ZineFrame bg="cream" borderColor="burntYellow">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">

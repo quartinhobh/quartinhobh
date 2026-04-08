@@ -119,6 +119,7 @@ const PresencaTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
   return (
     <div className="flex flex-col gap-4">
+      <HelperBox>Selecione um evento ativo pra ver e gerenciar a lista de presença. Você pode aprovar, recusar e exportar a lista em CSV.</HelperBox>
       <ZineFrame bg="cream">
         <label className="font-body text-zine-burntOrange flex flex-col gap-1">
           <span>Evento</span>
@@ -286,7 +287,7 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
   return (
     <ZineFrame bg="cream">
-      <HelperBox>Aqui você cria e gerencia os eventos do site. Use "Novo evento" para adicionar, ou clique em "editar" e "apagar" nos existentes.</HelperBox>
+      <HelperBox>Aqui você cria e gerencia os eventos do site. Use 'Novo evento' pra adicionar, ou clique em 'editar' e 'apagar' nos existentes. Eventos com status 'upcoming' aparecem na página inicial, 'live' ativa o chat e as votações.</HelperBox>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-2xl text-zine-burntOrange">Eventos</h2>
         <Button onClick={() => setCreating(true)}>Novo evento</Button>

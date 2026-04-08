@@ -55,7 +55,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <HelperBox>Veja banimentos ativos, logs de moderação e gerencie restrições de usuários.</HelperBox>
+      <HelperBox>Veja banimentos ativos e o histórico de moderação. Usuários banidos não conseguem usar o chat nem confirmar presença. Clique em 'desbanir' pra liberar o acesso novamente.</HelperBox>
       <ZineFrame bg="cream">
         <h2 className="font-display text-2xl text-zine-burntOrange mb-3">
           Banimentos ativos

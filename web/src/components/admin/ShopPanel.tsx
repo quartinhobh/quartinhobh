@@ -154,6 +154,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
       {/* Add product */}
       {showProducts && <ZineFrame bg="cream">
         <h3 className="font-display text-xl text-zine-burntOrange mb-3">Adicionar produto</h3>
+        <HelperBox>Digite o preço em reais (ex: 25,00). O emoji aparece do lado do nome na lojinha.</HelperBox>
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-[60px_1fr] gap-2">
             <input placeholder="emoji" value={emoji} onChange={(e) => setEmoji(e.target.value)} className={inputClass} />

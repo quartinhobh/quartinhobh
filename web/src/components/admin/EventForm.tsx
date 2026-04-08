@@ -255,6 +255,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           </button>
           {rsvpOpen && (
             <div className="px-3 pb-3 flex flex-col gap-3">
+              <HelperBox>Ative o RSVP para controlar presença no evento. Capacidade limita quantas pessoas podem confirmar — quando enche, vai pra fila de espera (se ativada). Aprovação 'automática' confirma na hora, 'manual' deixa pendente pra você aprovar. +1 permite trazer acompanhante. 'Abre em' e 'Fecha em' controlam quando o RSVP fica disponível.</HelperBox>
               <label className="font-body text-zine-burntOrange flex items-center gap-2">
                 <input
                   type="checkbox"

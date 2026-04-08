@@ -26,12 +26,13 @@ import {
   type UnsubscribedUser,
 } from '@/services/api';
 import HelperBox from '@/components/admin/HelperBox';
+import { EmailTemplatesPanel } from '@/components/admin/EmailTemplatesPanel';
 import type { User } from '@/types';
 
 const inputClass =
   'font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange w-full';
 
-type Mode = 'newsletter' | 'single' | 'groups' | 'history' | 'config';
+type Mode = 'newsletter' | 'single' | 'groups' | 'history' | 'config' | 'templates';
 
 export const NewsletterPanel: React.FC = () => {
   const idToken = useIdToken();
@@ -60,6 +61,7 @@ export const NewsletterPanel: React.FC = () => {
           ['groups', 'Grupos'],
           ['history', 'Histórico'],
           ['config', 'Config'],
+          ['templates', 'Templates RSVP'],
         ] as [Mode, string][]).map(([m, label]) => (
           <Button
             key={m}
@@ -76,6 +78,7 @@ export const NewsletterPanel: React.FC = () => {
       {mode === 'groups' && <GroupsManager idToken={idToken} />}
       {mode === 'history' && <CampaignHistory idToken={idToken} />}
       {mode === 'config' && <EmailConfigPanel idToken={idToken} />}
+      {mode === 'templates' && <EmailTemplatesPanel idToken={idToken} />}
     </div>
   );
 };
@@ -244,6 +247,7 @@ const SingleEmailForm: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   return (
     <ZineFrame bg="cream">
       <h3 className="font-display text-xl text-zine-burntOrange mb-3">Email avulso</h3>
+      <HelperBox>Envie um email avulso para uma pessoa só. Útil pra comunicação direta com alguém específico.</HelperBox>
       <div className="flex flex-col gap-3">
         <input
           type="email"
@@ -627,6 +631,7 @@ const CampaignHistory: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   return (
     <ZineFrame bg="cream">
       <h3 className="font-display text-xl text-zine-burntOrange mb-3">Histórico de envios</h3>
+      <HelperBox>Histórico de todos os emails enviados pelo painel. Mostra data, assunto e quantas pessoas receberam.</HelperBox>
       {campaigns.length === 0 ? (
         <p className="font-body italic text-zine-burntOrange/70">Nenhum envio ainda.</p>
       ) : (
