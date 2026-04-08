@@ -14,6 +14,8 @@ import type {
   Product,
   FavoriteAlbum,
   LinkTreeItem,
+  RsvpEntry,
+  RsvpSummary,
   SocialLink,
   User,
   UserRole,
@@ -975,4 +977,76 @@ export async function checkBannerDismissal(bannerId: string, version: number, id
   if (!res.ok) return false;
   const body = (await res.json()) as { dismissed: boolean };
   return body.dismissed;
+}
+
+// ── RSVP ────────────────────────────────────────────────────────────
+
+export async function fetchRsvpSummary(eventId: string): Promise<RsvpSummary> {
+  const res = await fetch(`${API_URL}/events/${encodeURIComponent(eventId)}/rsvp`);
+  if (!res.ok) throw new Error(`GET rsvp summary failed: ${res.status}`);
+  return (await res.json()) as RsvpSummary;
+}
+
+export async function fetchUserRsvp(
+  eventId: string,
+  idToken: string | null,
+): Promise<RsvpEntry | null> {
+  if (!idToken) return null;
+  const res = await fetch(
+    `${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/user`,
+    { headers: { Authorization: `Bearer ${idToken}` } },
+  );
+  if (!res.ok) throw new Error(`GET rsvp user failed: ${res.status}`);
+  const body = (await res.json()) as { entry: RsvpEntry | null };
+  return body.entry;
+}
+
+export async function submitRsvp(
+  eventId: string,
+  idToken: string,
+  opts?: { plusOne?: boolean; plusOneName?: string },
+): Promise<{ entry: RsvpEntry }> {
+  const res = await fetch(`${API_URL}/events/${encodeURIComponent(eventId)}/rsvp`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(opts ?? {}),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `POST rsvp failed: ${res.status}`);
+  }
+  return (await res.json()) as { entry: RsvpEntry };
+}
+
+export async function cancelRsvp(
+  eventId: string,
+  idToken: string,
+): Promise<{ promotedUserId: string | null }> {
+  const res = await fetch(`${API_URL}/events/${encodeURIComponent(eventId)}/rsvp`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE rsvp failed: ${res.status}`);
+  return (await res.json()) as { promotedUserId: string | null };
+}
+
+export async function updateRsvpPlusOne(
+  eventId: string,
+  idToken: string,
+  plusOne: boolean,
+  plusOneName: string | null,
+): Promise<{ entry: RsvpEntry }> {
+  const res = await fetch(`${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/plus-one`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ plusOne, plusOneName }),
+  });
+  if (!res.ok) throw new Error(`PUT rsvp plus-one failed: ${res.status}`);
+  return (await res.json()) as { entry: RsvpEntry };
 }

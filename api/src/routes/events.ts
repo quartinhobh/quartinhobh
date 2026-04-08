@@ -14,8 +14,12 @@ import {
   updateEvent,
 } from '../services/eventService';
 import type { Event, EventCreatePayload } from '../types';
+import { rsvpRouter } from './rsvp';
 
 export const eventsRouter: Router = Router();
+
+// Nested RSVP routes: /events/:eventId/rsvp/*
+eventsRouter.use('/:eventId/rsvp', rsvpRouter);
 
 // ── In-memory cache (TTL 60s, invalidated on writes) ─────────────
 const CACHE_TTL = 10 * 60_000; // 10 min — invalidated instantly on admin writes

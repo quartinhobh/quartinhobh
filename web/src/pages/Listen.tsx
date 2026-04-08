@@ -2,9 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useEvent } from '@/hooks/useEvent';
 import { useVotes } from '@/hooks/useVotes';
+import { useRsvp } from '@/hooks/useRsvp';
 import { useAuth } from '@/hooks/useAuth';
 import { AlbumDisplay } from '@/components/events/AlbumDisplay';
 import { TrackList } from '@/components/events/TrackList';
+import { RsvpButton } from '@/components/rsvp/RsvpButton';
+import { RsvpStatus } from '@/components/rsvp/RsvpStatus';
 import { LoadingState } from '@/components/common/LoadingState';
 import ZineFrame from '@/components/common/ZineFrame';
 
@@ -35,6 +38,12 @@ export const Listen: React.FC = () => {
     event?.id ?? null,
     idToken,
     user?.uid ?? null,
+  );
+
+  const rsvpEnabled = !!event?.rsvp?.enabled;
+  const { summary: rsvpSummary, userEntry: rsvpEntry, submit: rsvpSubmit, cancel: rsvpCancel } = useRsvp(
+    rsvpEnabled ? event?.id ?? null : null,
+    idToken,
   );
 
   if (loading) {
@@ -118,6 +127,25 @@ export const Listen: React.FC = () => {
           )}
         </div>
       </ZineFrame>
+
+      {/* RSVP — only for upcoming/live events with RSVP enabled */}
+      {rsvpEnabled && event.rsvp && rsvpSummary && (isUpcoming || isLive) && (
+        <ZineFrame bg="cream" borderColor="burntYellow">
+          <div className="flex flex-col gap-3">
+            <RsvpStatus summary={rsvpSummary} />
+            {isUpcoming && (
+              <RsvpButton
+                config={event.rsvp}
+                summary={rsvpSummary}
+                userEntry={rsvpEntry}
+                isAuthenticated={!!idToken}
+                onSubmit={rsvpSubmit}
+                onCancel={rsvpCancel}
+              />
+            )}
+          </div>
+        </ZineFrame>
+      )}
 
       {/* Event links — Spotify, extras */}
       {(event.spotifyPlaylistUrl || event.extras.links.length > 0) && (

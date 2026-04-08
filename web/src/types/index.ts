@@ -79,6 +79,7 @@ export interface Event {
   album: EventAlbumSnapshot | null;
   extras: EventExtras;
   spotifyPlaylistUrl: string | null;
+  rsvp?: RsvpConfig;
   createdBy: string;
   createdAt: number;
   updatedAt: number;
@@ -175,6 +176,37 @@ export interface EventPhoto {
   url: string;
   uploadedBy: string;
   createdAt: number;
+}
+
+// ── RSVP ────────────────────────────────────────────────────────────
+
+export type RsvpApprovalMode = 'auto' | 'manual';
+
+export interface RsvpConfig {
+  enabled: boolean;
+  capacity: number | null;
+  waitlistEnabled: boolean;
+  plusOneAllowed: boolean;
+  approvalMode: RsvpApprovalMode;
+  opensAt: number | null;
+  closesAt: number | null;
+}
+
+export type RsvpStatus = 'confirmed' | 'waitlisted' | 'pending_approval' | 'cancelled' | 'rejected';
+
+export interface RsvpEntry {
+  status: RsvpStatus;
+  plusOne: boolean;
+  plusOneName: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface RsvpSummary {
+  confirmedCount: number;
+  waitlistCount: number;
+  capacity: number | null;
+  confirmedAvatars: { id: string; displayName: string; avatarUrl: string | null }[];
 }
 
 // ── Lojinha / PIX ─────────────────────────────────────────────────────
