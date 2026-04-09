@@ -172,6 +172,21 @@ describe('RsvpButton', () => {
     await waitFor(() => expect(onCancel).toHaveBeenCalledOnce());
   });
 
+  it('shows opening date when opensAt is in the future', () => {
+    const futureConfig = { ...baseConfig, opensAt: Date.now() + 86400000 }; // +1 day
+    render(
+      <RsvpButton
+        config={futureConfig}
+        summary={baseSummary}
+        userEntry={null}
+        isAuthenticated={true}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/inscrições abrem em/i)).toBeInTheDocument();
+  });
+
   it('shows +1 checkbox when plusOneAllowed', () => {
     render(
       <RsvpButton

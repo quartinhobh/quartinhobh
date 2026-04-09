@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import type { Event, Photo } from '@/types';
 
 vi.mock('@/services/api', () => ({
@@ -67,14 +68,14 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('AdminPanel', () => {
   it('renders the three tabs', () => {
-    render(<AdminPanel idToken="tok" />);
+    render(<MemoryRouter><AdminPanel idToken="tok" /></MemoryRouter>);
     expect(screen.getByRole('tab', { name: /eventos/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /fotos/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /moderação/i })).toBeInTheDocument();
   });
 
   it('Events tab shows events list and New Event button', async () => {
-    render(<AdminPanel idToken="tok" />);
+    render(<MemoryRouter><AdminPanel idToken="tok" /></MemoryRouter>);
     await waitFor(() =>
       expect(screen.getByTestId('event-row-e1')).toBeInTheDocument(),
     );
@@ -84,7 +85,7 @@ describe('AdminPanel', () => {
   });
 
   it('Events tab: clicking editar opens EventForm in edit mode', async () => {
-    render(<AdminPanel idToken="tok" />);
+    render(<MemoryRouter><AdminPanel idToken="tok" /></MemoryRouter>);
     await waitFor(() =>
       expect(screen.getByTestId('event-row-e1')).toBeInTheDocument(),
     );
@@ -96,7 +97,7 @@ describe('AdminPanel', () => {
   });
 
   it('Photos tab: picks event and shows PhotoUpload + photo list', async () => {
-    render(<AdminPanel idToken="tok" />);
+    render(<MemoryRouter><AdminPanel idToken="tok" /></MemoryRouter>);
     await userEvent.click(screen.getByRole('tab', { name: /fotos/i }));
     await waitFor(() =>
       expect(screen.getByLabelText('photos-event-select')).toBeInTheDocument(),
@@ -110,7 +111,7 @@ describe('AdminPanel', () => {
   });
 
   it('Moderation tab renders ModerationPanel', async () => {
-    render(<AdminPanel idToken="tok" />);
+    render(<MemoryRouter><AdminPanel idToken="tok" /></MemoryRouter>);
     await userEvent.click(screen.getByRole('tab', { name: /moderação/i }));
     await waitFor(() =>
       expect(screen.getByText(/Banimentos ativos/i)).toBeInTheDocument(),

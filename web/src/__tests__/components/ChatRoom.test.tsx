@@ -45,6 +45,6 @@ describe('ChatRoom', () => {
 
   it('renders inside a ZineFrame (cream background)', () => {
     const { container } = render(<ChatRoom messages={[]} />, { wrapper: Wrapper });
-    expect(container.innerHTML).toMatch(/bg-zine-cream/);
+    expect(container.querySelector('[class*="bg-zine-cream"]')).not.toBeNull();
   });
 });

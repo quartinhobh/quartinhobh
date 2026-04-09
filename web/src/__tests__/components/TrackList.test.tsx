@@ -29,4 +29,10 @@ describe('TrackList', () => {
     expect(screen.getByText('3:00')).toBeInTheDocument();
     expect(screen.getByText('3:20')).toBeInTheDocument();
   });
+
+  it('renders zero-duration track without crashing', () => {
+    render(<TrackList tracks={tracks} />);
+    // length: 0 is treated as no duration — the title still renders
+    expect(screen.getByText('Gamma')).toBeInTheDocument();
+  });
 });
