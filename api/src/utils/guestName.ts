@@ -72,6 +72,17 @@ const MUSICIANS: readonly string[] = [
   'nara-leao',
 ];
 
+/** Strip diacritics and produce a URL-safe ASCII slug. */
+function toAsciiSlug(input: string): string {
+  return input
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 /**
  * Generate a kebab-case guest name like `calopsita-bowie`.
  * If `seed` is provided, the result is deterministic.
@@ -81,7 +92,7 @@ export function generateGuestName(seed?: number): string {
   const animal = ANIMALS[Math.floor(rand * ANIMALS.length)];
   const rand2 = seed === undefined ? Math.random() : pseudoRandom(seed + 1);
   const musician = MUSICIANS[Math.floor(rand2 * MUSICIANS.length)];
-  return `${animal}-${musician}`;
+  return toAsciiSlug(`${animal}-${musician}`);
 }
 
 function pseudoRandom(seed: number): number {

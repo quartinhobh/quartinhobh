@@ -314,6 +314,17 @@ describe.skipIf(SKIP)('RSVP Integration', () => {
     expect(result!.bodyText).toContain('Quartinho #42');
   });
 
+  it('getAllTemplates returns 6 templates with defaults', async () => {
+    const { getAllTemplates } = await import('../../services/emailTemplateService');
+
+    const templates = await getAllTemplates();
+    expect(templates).toHaveLength(6);
+    expect(templates.map((t) => t.key)).toEqual([
+      'confirmation', 'waitlist', 'promotion', 'reminder', 'venue_reveal', 'rejected',
+    ]);
+    expect(templates.every((t) => t.enabled)).toBe(true);
+  });
+
   it('buildRsvpEmail returns null when template is disabled', async () => {
     const { updateTemplate, buildRsvpEmail } = await import('../../services/emailTemplateService');
 
@@ -327,17 +338,6 @@ describe.skipIf(SKIP)('RSVP Integration', () => {
     });
 
     expect(result).toBeNull();
-  });
-
-  it('getAllTemplates returns 6 templates with defaults', async () => {
-    const { getAllTemplates } = await import('../../services/emailTemplateService');
-
-    const templates = await getAllTemplates();
-    expect(templates).toHaveLength(6);
-    expect(templates.map((t) => t.key)).toEqual([
-      'confirmation', 'waitlist', 'promotion', 'reminder', 'venue_reveal', 'rejected',
-    ]);
-    expect(templates.every((t) => t.enabled)).toBe(true);
   });
 
   it('updateTemplate persists changes', async () => {
