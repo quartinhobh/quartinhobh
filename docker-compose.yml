@@ -48,6 +48,9 @@ services:
       FIREBASE_DATABASE_URL: http://firebase-emulators:9000/?ns=quartinho-dev
       FIREBASE_STORAGE_BUCKET: quartinho-dev.appspot.com
       MUSICBRAINZ_USER_AGENT: Quartinho/1.0 (dev@localhost)
+      # Brevo is bypassed in dev; for integration tests use MailDev (profile: test)
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-dev@quartinho.local}
       # MinIO (S3 local) — API connects via Docker DNS, public URLs via host port
       MINIO_ENDPOINT: http://minio:9000
       R2_PUBLIC_URL: http://localhost:9002
@@ -107,6 +110,15 @@ services:
       mc mb --ignore-existing local/qbh;
       mc anonymous set download local/qbh;
       "
+
+  # ── MailDev (SMTP mock for email testing) ─────────────────────────────
+  maildev:
+    image: maildev/maildev:2.1.0
+    ports:
+      - "1025:1025"   # SMTP
+      - "1080:1080"   # Web UI
+    profiles:
+      - test
 
 volumes:
   node_modules:

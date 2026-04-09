@@ -88,6 +88,15 @@ test: ## Unit tests (api + web, vitest)
 test-emulators: ## API integration tests against running emulator (needs `make up`)
 	bun run test:emulators
 
+test-integration: ## RSVP integration tests against emulator + MailDev (needs `make up` + maildev)
+	docker compose --profile test up -d maildev
+	@echo "→ waiting for MailDev on :1080"
+	@for i in $$(seq 1 15); do \
+		curl -sf http://localhost:1080 -o /dev/null && echo "✓ maildev ready" && break; \
+		sleep 1; \
+	done
+	cd api && bun run test:integration
+
 test-all: lint typecheck test test-emulators ## Run every check below E2E
 
 # ─── E2E ────────────────────────────────────────────────────────────────
