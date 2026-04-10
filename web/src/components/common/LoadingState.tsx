@@ -9,22 +9,27 @@ function toggleCase(str: string, phase: number): string {
     .join('');
 }
 
+/** Shared letter-toggle animation used by both text and skeleton loaders. */
+function useZineLoadingText(base = 'carregando', intervalMs = 350): string {
+  const [text, setText] = useState(base);
+  useEffect(() => {
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setText(toggleCase(base, i));
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [base, intervalMs]);
+  return text;
+}
+
 /**
  * LoadingState — animated zine-style text loader.
  * Default loader for admin panels, lazy route fallbacks, and list views where
  * a content-shaped skeleton would be dissonant.
  */
 export function LoadingState() {
-  const [text, setText] = useState('carregando');
-  useEffect(() => {
-    const base = 'carregando';
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setText(toggleCase(base, i));
-    }, 350);
-    return () => clearInterval(id);
-  }, []);
+  const text = useZineLoadingText();
   return (
     <ZineFrame bg="mint">
       <div data-testid="loading-text" className="text-center py-8">
@@ -50,6 +55,7 @@ export function SkeletonPulse({ className = '' }: { className?: string }) {
  * the zine personality is preserved.
  */
 export function EventDetailSkeleton() {
+  const text = useZineLoadingText();
   return (
     <ZineFrame bg="mint">
       <div data-testid="loading-skeleton" className="flex flex-col items-center gap-4 py-2">
@@ -77,7 +83,7 @@ export function EventDetailSkeleton() {
 
         {/* Zine loading marker — no extra border, ZineFrame already frames us */}
         <p className="font-display text-base italic text-zine-cream/70 mt-3 tracking-wide">
-          carregando…
+          {text}…
         </p>
       </div>
     </ZineFrame>
