@@ -8,7 +8,7 @@ import { AlbumDisplay } from '@/components/events/AlbumDisplay';
 import { TrackList } from '@/components/events/TrackList';
 import { RsvpButton } from '@/components/rsvp/RsvpButton';
 import { RsvpStatus } from '@/components/rsvp/RsvpStatus';
-import { LoadingState } from '@/components/common/LoadingState';
+import { EventDetailSkeleton } from '@/components/common/LoadingState';
 import ZineFrame from '@/components/common/ZineFrame';
 
 /** Days before the event date at which the location becomes visible. */
@@ -47,7 +47,7 @@ export const Listen: React.FC = () => {
   );
 
   if (loading) {
-    return <LoadingState />;
+    return <EventDetailSkeleton />;
   }
 
   if (error) {

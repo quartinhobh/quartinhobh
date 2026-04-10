@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
-import { LoadingState } from '@/components/common/LoadingState';
+import { EventDetailSkeleton } from '@/components/common/LoadingState';
 import AlbumDisplay from '@/components/events/AlbumDisplay';
 import TrackList from '@/components/events/TrackList';
 import VoteResults from '@/components/voting/VoteResults';
@@ -72,7 +72,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
   }
 
   if (!event) {
-    return <LoadingState />;
+    return <EventDetailSkeleton />;
   }
 
   const visible = photos.filter((p) => p.category === tab);
