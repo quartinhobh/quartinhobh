@@ -2,10 +2,12 @@
   "rules": {
     ".write": "auth != null",
     "chats": {
+      ".read": true,
       "$eventId": {
-        ".read": "auth != null",
+        ".read": true,
         ".write": "auth != null",
         "messages": {
+          ".read": true,
           "$messageId": {
             ".write": "auth != null && !root.child('bans').child(auth.uid).exists() && !data.child('isDeleted').exists()",
             ".validate": "newData.hasChildren(['uid','displayName','text','timestamp']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500"

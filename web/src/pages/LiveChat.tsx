@@ -6,6 +6,8 @@ import { useSessionStore } from '@/store/sessionStore';
 import { auth } from '@/services/firebase';
 import { ChatRoom } from '@/components/chat/ChatRoom';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { LoadingState } from '@/components/common/LoadingState';
+import LoginModal from '@/components/auth/LoginModal';
 
 export interface LiveChatProps {
   eventId?: string;
@@ -14,9 +16,10 @@ export interface LiveChatProps {
 export const LiveChat: React.FC<LiveChatProps> = ({ eventId: eventIdProp }) => {
   const params = useParams<{ eventId?: string }>();
   const eventId = eventIdProp ?? params.eventId ?? 'debug-chat';
-  const { messages, sendMessage, removeMessage } = useChat(eventId);
+  const { messages, sendMessage, removeMessage, loading } = useChat(eventId);
   const role = useSessionStore((s) => s.role);
   const canModerate = role === 'admin' || role === 'moderator';
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const [idToken, setIdToken] = useState<string | null>(null);
   useEffect(() => {
@@ -36,6 +39,14 @@ export const LiveChat: React.FC<LiveChatProps> = ({ eventId: eventIdProp }) => {
     return (
       <main className="font-body text-zine-burntOrange p-4">
         no event selected
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="p-4">
+        <LoadingState />
       </main>
     );
   }
@@ -60,9 +71,19 @@ export const LiveChat: React.FC<LiveChatProps> = ({ eventId: eventIdProp }) => {
         }
       />
       {role === 'guest' ? (
-        <p className="font-body text-sm text-zine-burntOrange/60 text-center py-2">
-          Faça login para participar do chat.
-        </p>
+        <div className="flex flex-col items-center gap-2 py-3">
+          <p className="font-body text-sm text-zine-burntOrange/80 text-center">
+            Entre pra participar da conversa.
+          </p>
+          <button
+            type="button"
+            onClick={() => setLoginOpen(true)}
+            className="font-body font-bold text-sm text-zine-cream bg-zine-burntOrange border-2 border-zine-burntOrange px-4 py-1 hover:bg-zine-burntYellow hover:border-zine-burntYellow hover:text-zine-burntOrange transition-colors"
+          >
+            entrar
+          </button>
+          <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+        </div>
       ) : (
         <ChatInput onSend={sendMessage} />
       )}
