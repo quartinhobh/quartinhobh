@@ -19,6 +19,7 @@ import type {
   RsvpEntry,
   RsvpSummary,
   SocialLink,
+  StickerConfig,
   User,
   UserRole,
   UserVote,
@@ -233,12 +234,17 @@ export async function fetchEvents(status?: EventStatus): Promise<Event[]> {
   return body.events;
 }
 
-export async function fetchCurrentEvent(): Promise<Event | null> {
+export interface CurrentEventResponse {
+  event: Event;
+  rsvpSummary: RsvpSummary | null;
+}
+
+export async function fetchCurrentEvent(): Promise<CurrentEventResponse | null> {
   const res = await fetch(`${API_URL}/events/current`);
   if (res.status === 404 || res.status === 500) return null;
   if (!res.ok) throw new Error(`GET /events/current failed: ${res.status}`);
-  const body = (await res.json()) as { event: Event };
-  return body.event;
+  const body = (await res.json()) as { event: Event; rsvpSummary?: RsvpSummary | null };
+  return { event: body.event, rsvpSummary: body.rsvpSummary ?? null };
 }
 
 export async function fetchEventById(id: string): Promise<Event | null> {
@@ -1136,4 +1142,51 @@ export async function exportRsvpCsv(
   );
   if (!res.ok) throw new Error(`GET rsvp/admin/export failed: ${res.status}`);
   return res.text();
+}
+
+export async function fetchStickerConfig(): Promise<StickerConfig> {
+  const res = await fetch(`${API_URL}/sticker-config`);
+  if (!res.ok) throw new Error(`GET /sticker-config failed: ${res.status}`);
+  const body = (await res.json()) as { config: StickerConfig };
+  return body.config;
+}
+
+export async function updateStickerConfig(
+  patch: Partial<Omit<StickerConfig, "updatedAt">>,
+  idToken: string,
+): Promise<StickerConfig> {
+  const res = await fetch(`${API_URL}/sticker-config`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(`PATCH /sticker-config failed: ${res.status}`);
+  const body = (await res.json()) as { config: StickerConfig };
+  return body.config;
+}
+
+export async function trackStickerClick(idToken: string | null): Promise<void> {
+  try {
+    await fetch(`${API_URL}/user-stats/sticker-click`, {
+      method: "POST",
+      headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+    });
+  } catch {
+    /* fire-and-forget — never block UI on stats */
+  }
+}
+
+export async function trackProfileVisit(username: string, idToken: string | null): Promise<void> {
+  try {
+    await fetch(`${API_URL}/user-stats/profile-visit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
+      body: JSON.stringify({ username }),
+    });
+  } catch {
+    /* fire-and-forget */
+  }
 }

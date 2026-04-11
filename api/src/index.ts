@@ -14,6 +14,8 @@ import { usersRouter } from './routes/users';
 import { emailRouter } from './routes/email';
 import { linktreeRouter } from './routes/linktree';
 import { bannersRouter } from './routes/banners';
+import { stickerConfigRouter } from './routes/stickerConfig';
+import { userStatsRouter } from './routes/userStats';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -45,6 +47,8 @@ app.use('/users', usersRouter);
 app.use('/email', emailRouter);
 app.use('/linktree', linktreeRouter);
 app.use('/banners', bannersRouter);
+app.use('/sticker-config', stickerConfigRouter);
+app.use('/user-stats', userStatsRouter);
 
 if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'preflight') {
   app.listen(PORT, () => {

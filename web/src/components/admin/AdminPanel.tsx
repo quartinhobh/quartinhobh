@@ -9,6 +9,7 @@ import UsersPanel from '@/components/admin/UsersPanel';
 import NewsletterPanel from '@/components/admin/NewsletterPanel';
 import LinkTreePanel from '@/components/admin/LinkTreePanel';
 import BannerPanel from '@/components/admin/BannerPanel';
+import StickerPanel from '@/components/admin/StickerPanel';
 import RsvpPanel from '@/components/admin/RsvpPanel';
 import { CanShow } from '@/components/admin/CanShow';
 import HelperBox from '@/components/admin/HelperBox';
@@ -33,7 +34,7 @@ export interface AdminPanelProps {
   idToken?: string | null;
 }
 
-type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'linktree' | 'banners' | 'presenca';
+type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'linktree' | 'banners' | 'stickers' | 'presenca';
 
 /**
  * AdminPanel — three-tab admin dashboard:
@@ -44,7 +45,7 @@ type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'us
  */
 function getHashTab(): Tab {
   const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'linktree', 'banners', 'presenca'];
+  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'linktree', 'banners', 'stickers', 'presenca'];
   return valid.includes(hash as Tab) ? (hash as Tab) : 'events';
 }
 
@@ -163,6 +164,7 @@ const AdminPanelInner: React.FC = () => {
     { key: 'email', label: 'Email' },
     { key: 'linktree', label: 'Links' },
     { key: 'banners', label: 'Banners' },
+    { key: 'stickers', label: 'Stickers' },
     { key: 'presenca', label: 'Presença' },
   ];
 
@@ -217,6 +219,7 @@ const AdminPanelInner: React.FC = () => {
       {tab === 'email' && <NewsletterPanel />}
       {tab === 'linktree' && <LinkTreePanel />}
       {tab === 'banners' && <BannerPanel />}
+      {tab === 'stickers' && <StickerPanel />}
       {tab === 'presenca' && <PresencaTab idToken={idToken} />}
       <CanShow />
       <p className="text-right">
@@ -234,6 +237,7 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [editing, setEditing] = useState<Event | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   async function refresh(): Promise<void> {
     const list = await fetchEvents();
@@ -245,16 +249,24 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   }, []);
 
   async function handleDelete(id: string): Promise<void> {
+    if (deletingIds.has(id)) return;
     const token = await resolveToken(idToken);
     if (!token) {
       alert('Sessão expirada. Faça login novamente.');
       return;
     }
+    setDeletingIds((s) => new Set(s).add(id));
     try {
       await apiDeleteEvent(id, token);
       await refresh();
     } catch (err) {
       alert(`Erro ao apagar evento: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -298,11 +310,13 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {events.map((e) => (
+          {events.map((e) => {
+            const isDeleting = deletingIds.has(e.id);
+            return (
             <li
               key={e.id}
               data-testid={`event-row-${e.id}`}
-              className="flex items-center justify-between gap-3 border-b border-zine-burntOrange/30 pb-2"
+              className={`flex items-center justify-between gap-3 border-b border-zine-burntOrange/30 pb-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <div className="flex flex-col">
                 <span className="font-display text-zine-burntOrange">
@@ -314,10 +328,13 @@ const EventsTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => setEditing(e)}>editar</Button>
-                <Button onClick={() => void handleDelete(e.id)}>apagar</Button>
+                <Button onClick={() => void handleDelete(e.id)} disabled={isDeleting}>
+                  {isDeleting ? 'apagando...' : 'apagar'}
+                </Button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </ZineFrame>
@@ -328,6 +345,7 @@ const PhotosTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [eventId, setEventId] = useState<string>('');
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     void fetchEvents().then((list) => {
@@ -344,11 +362,23 @@ const PhotosTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   }, [eventId]);
 
   async function handleDelete(p: Photo): Promise<void> {
+    if (deletingIds.has(p.id)) return;
     const token = await resolveToken(idToken);
     if (!token) return;
-    await apiDeletePhoto(eventId, p.category, p.id, token);
-    const fresh = await fetchPhotos(eventId);
-    setPhotos(fresh);
+    setDeletingIds((s) => new Set(s).add(p.id));
+    try {
+      await apiDeletePhoto(eventId, p.category, p.id, token);
+      const fresh = await fetchPhotos(eventId);
+      setPhotos(fresh);
+    } catch (err) {
+      alert(`Erro ao apagar: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(p.id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -393,18 +423,23 @@ const PhotosTab: React.FC<{ idToken: string | null }> = ({ idToken }) => {
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {photos.map((p) => (
+            {photos.map((p) => {
+              const isDeleting = deletingIds.has(p.id);
+              return (
               <li
                 key={p.id}
                 data-testid={`photo-row-${p.id}`}
-                className="flex items-center justify-between gap-3"
+                className={`flex items-center justify-between gap-3 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 <span className="font-body text-zine-burntOrange text-sm">
                   {p.category} — {p.id}
                 </span>
-                <Button onClick={() => void handleDelete(p)}>apagar</Button>
+                <Button onClick={() => void handleDelete(p)} disabled={isDeleting}>
+                  {isDeleting ? 'apagando...' : 'apagar'}
+                </Button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </ZineFrame>

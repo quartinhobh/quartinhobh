@@ -68,6 +68,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
   const [desc, setDesc] = useState('');
   const [price, setPrice] = useState('');
   const [csvText, setCsvText] = useState('');
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   async function savePix() {
     const token = await getToken();
@@ -109,10 +110,22 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
   }
 
   async function handleDelete(id: string) {
+    if (deletingIds.has(id)) return;
     const token = await getToken();
     if (!token) return;
-    await deleteShopProduct(id, token);
-    await refresh();
+    setDeletingIds((s) => new Set(s).add(id));
+    try {
+      await deleteShopProduct(id, token);
+      await refresh();
+    } catch (err) {
+      alert(`Erro ao apagar: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
+    }
   }
 
   const showPix = mode === 'pix' || mode === 'all';
@@ -206,6 +219,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ mode = 'all' }) => {
               }
             }}
             onDelete={handleDelete}
+            deletingIds={deletingIds}
           />
         )}
       </ZineFrame>}
@@ -232,9 +246,11 @@ function DragHandle() {
 function SortableProductItem({
   product,
   onDelete,
+  isDeleting,
 }: {
   product: Product;
   onDelete: (id: string) => void;
+  isDeleting: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: product.id });
@@ -242,7 +258,7 @@ function SortableProductItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : isDeleting ? 0.5 : 1,
     zIndex: isDragging ? 50 : undefined,
   };
 
@@ -250,7 +266,7 @@ function SortableProductItem({
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between gap-3 border-b border-zine-burntOrange/20 pb-2"
+      className={`flex items-center justify-between gap-3 border-b border-zine-burntOrange/20 pb-2 ${isDeleting ? 'pointer-events-none' : ''}`}
     >
       <div {...attributes} {...listeners} className="touch-none shrink-0">
         <DragHandle />
@@ -271,7 +287,9 @@ function SortableProductItem({
           </span>
         </div>
       </div>
-      <Button onClick={() => void onDelete(product.id)}>apagar</Button>
+      <Button onClick={() => void onDelete(product.id)} disabled={isDeleting}>
+        {isDeleting ? 'apagando...' : 'apagar'}
+      </Button>
     </li>
   );
 }
@@ -282,10 +300,12 @@ function SortableProductList({
   products,
   onReorder,
   onDelete,
+  deletingIds,
 }: {
   products: Product[];
   onReorder: (reordered: Product[]) => void;
   onDelete: (id: string) => void;
+  deletingIds: Set<string>;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -305,7 +325,7 @@ function SortableProductList({
       <SortableContext items={products.map((p) => p.id)} strategy={verticalListSortingStrategy}>
         <ul className="flex flex-col gap-2">
           {products.map((p) => (
-            <SortableProductItem key={p.id} product={p} onDelete={onDelete} />
+            <SortableProductItem key={p.id} product={p} onDelete={onDelete} isDeleting={deletingIds.has(p.id)} />
           ))}
         </ul>
       </SortableContext>

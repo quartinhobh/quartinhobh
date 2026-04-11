@@ -264,6 +264,19 @@ export interface Banner {
   updatedAt: number;
 }
 
+// ── Sticker config ───────────────────────────────────────────────────
+
+export interface StickerConfig {
+  enabled: boolean;
+  maxConcurrent: number;
+  spawnMinSeconds: number;
+  spawnMaxSeconds: number;
+  maxBeforeCooldown: number;
+  cooldownHours: number;
+  enabledAssets: string[];
+  updatedAt: number;
+}
+
 // ── LinkTree ─────────────────────────────────────────────────────────
 
 export interface LinkTreeItem {

@@ -25,6 +25,7 @@ export const LinkTreePanel: React.FC = () => {
   const [url, setUrl] = useState('');
   const [emoji, setEmoji] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const dragIdx = useRef<number | null>(null);
   const [dropTarget, setDropTarget] = useState<{ idx: number; half: 'top' | 'bottom' } | null>(null);
@@ -60,11 +61,22 @@ export const LinkTreePanel: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!idToken) return;
+    if (!idToken || deletingIds.has(id)) return;
+    setDeletingIds((s) => new Set(s).add(id));
     const prev = links;
-    setLinks((l) => l.filter((x) => x.id !== id));
-    try { await deleteLink(id, idToken); }
-    catch { setLinks(prev); }
+    try {
+      await deleteLink(id, idToken);
+      setLinks((l) => l.filter((x) => x.id !== id));
+    } catch (err) {
+      setLinks(prev);
+      alert(`Erro ao apagar: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
@@ -140,7 +152,9 @@ export const LinkTreePanel: React.FC = () => {
             className={dropZoneClass(dropTarget?.idx === -1)}
           />
 
-          {links.map((link, idx) => (
+          {links.map((link, idx) => {
+            const isDeleting = deletingIds.has(link.id);
+            return (
             <div key={link.id} className="relative py-0.5">
               {dropTarget?.idx === idx && dropTarget.half === 'top' && (
                 <div className="absolute -top-px left-0 right-0 h-0.5 bg-zine-burntOrange rounded" />
@@ -152,7 +166,7 @@ export const LinkTreePanel: React.FC = () => {
                 onDragLeave={() => setDropTarget(null)}
                 onDrop={(e) => handleDrop(e, idx)}
                 onDragEnd={() => { dragIdx.current = null; setDropTarget(null); }}
-                className={`flex items-center gap-2 px-3 py-2 border-b border-zine-burntOrange/20 select-none ${!link.active ? 'opacity-40' : ''}`}
+                className={`flex items-center gap-2 px-3 py-2 border-b border-zine-burntOrange/20 select-none ${!link.active ? 'opacity-40' : ''} ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 <span className="cursor-grab font-display text-lg text-zine-burntOrange/40 px-1 select-none">⠿</span>
                 <span className="text-lg">{link.emoji || '🔗'}</span>
@@ -171,15 +185,16 @@ export const LinkTreePanel: React.FC = () => {
                 >
                   {link.active ? 'ativo' : 'inativo'}
                 </button>
-                <Button type="button" onClick={() => void handleDelete(link.id)}>
-                  excluir
+                <Button type="button" onClick={() => void handleDelete(link.id)} disabled={isDeleting}>
+                  {isDeleting ? 'apagando...' : 'excluir'}
                 </Button>
               </div>
               {dropTarget?.idx === idx && dropTarget.half === 'bottom' && (
                 <div className="absolute -bottom-px left-0 right-0 h-0.5 bg-zine-burntOrange rounded" />
               )}
             </div>
-          ))}
+            );
+          })}
 
           {/* Bottom drop zone */}
           <div

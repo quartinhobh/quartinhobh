@@ -5,6 +5,7 @@ import { adminDb } from '../config/firebase';
 import type { Event, EventAlbumSnapshot, EventCreatePayload, EventStatus } from '../types';
 import { fetchAlbum } from './musicbrainzService';
 import { generateBlurPlaceholder } from './blurPlaceholder';
+import { computeEventStatus, withDerivedStatus } from './eventStatus';
 
 const EVENTS = 'events';
 
@@ -13,24 +14,33 @@ export async function listEvents(): Promise<Event[]> {
     .collection(EVENTS)
     .orderBy('date', 'desc')
     .get();
-  return snap.docs.map((d) => d.data() as Event);
+  return snap.docs.map((d) => withDerivedStatus(d.data() as Event));
 }
 
 export async function getCurrentEvent(): Promise<Event | null> {
+  // Status is derived from date now, so we can't query by `status` anymore.
+  // Pull a window of recent + upcoming events ordered by date asc and pick
+  // the first one whose computed status is not 'archived'. The window is
+  // bounded by date >= 60 days ago to avoid scanning the full archive.
+  const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
   const snap = await adminDb
     .collection(EVENTS)
-    .where('status', 'in', ['live', 'upcoming'])
+    .where('date', '>=', cutoff)
     .orderBy('date', 'asc')
-    .limit(1)
     .get();
-  if (snap.empty) return null;
-  return snap.docs[0]!.data() as Event;
+  for (const doc of snap.docs) {
+    const ev = doc.data() as Event;
+    if (computeEventStatus(ev) !== 'archived') return withDerivedStatus(ev);
+  }
+  return null;
 }
 
 export async function getEventById(id: string): Promise<Event | null> {
   const snap = await adminDb.collection(EVENTS).doc(id).get();
   if (!snap.exists) return null;
-  return snap.data() as Event;
+  return withDerivedStatus(snap.data() as Event);
 }
 
 export async function createEvent(

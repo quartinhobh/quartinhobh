@@ -27,12 +27,18 @@ const RSVP_TTL = 30 * 1000; // 30s
 export function useRsvp(
   eventId: string | null,
   idToken: string | null,
+  initialSummary: RsvpSummary | null = null,
 ): UseRsvpResult {
   const cacheKey = eventId ? `rsvp:${eventId}` : null;
   const cached = cacheKey ? useApiCache.getState().get<RsvpCacheData>(cacheKey, RSVP_TTL) : null;
+  // Seed with whatever we already know: cached data if fresh, otherwise the
+  // summary inlined by /events/current. Either path lets the RSVP block
+  // render its counts immediately, so the user never sees an empty placeholder.
+  const seed: RsvpCacheData | null =
+    cached ?? (initialSummary ? { summary: initialSummary, userEntry: null } : null);
 
-  const [data, setData] = useState<RsvpCacheData | null>(cached ?? null);
-  const [loading, setLoading] = useState(!cached && !!eventId);
+  const [data, setData] = useState<RsvpCacheData | null>(seed);
+  const [loading, setLoading] = useState(!seed && !!eventId);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

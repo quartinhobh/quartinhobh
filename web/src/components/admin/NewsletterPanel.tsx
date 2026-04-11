@@ -284,6 +284,7 @@ const GroupsManager: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   async function refresh() {
     if (!idToken) return;
@@ -308,11 +309,22 @@ const GroupsManager: React.FC<{ idToken: string | null }> = ({ idToken }) => {
   }
 
   async function handleDelete(id: string) {
-    if (!idToken) return;
+    if (!idToken || deletingIds.has(id)) return;
     if (!confirm('Remover grupo? Membros não serão removidos da newsletter.')) return;
-    await deleteContactGroup(id, idToken);
-    if (openGroupId === id) setOpenGroupId(null);
-    await refresh();
+    setDeletingIds((s) => new Set(s).add(id));
+    try {
+      await deleteContactGroup(id, idToken);
+      if (openGroupId === id) setOpenGroupId(null);
+      await refresh();
+    } catch (err) {
+      alert(`Erro ao apagar: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -341,8 +353,10 @@ const GroupsManager: React.FC<{ idToken: string | null }> = ({ idToken }) => {
           <p className="font-body italic text-zine-burntOrange/70">Nenhum grupo.</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {groups.map((g) => (
-              <li key={g.id} className="border-b border-zine-burntOrange/30 pb-2">
+            {groups.map((g) => {
+              const isDeleting = deletingIds.has(g.id);
+              return (
+              <li key={g.id} className={`border-b border-zine-burntOrange/30 pb-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
@@ -360,16 +374,18 @@ const GroupsManager: React.FC<{ idToken: string | null }> = ({ idToken }) => {
                   <button
                     type="button"
                     onClick={() => void handleDelete(g.id)}
+                    disabled={isDeleting}
                     className="text-zine-burntOrange/60 underline text-xs font-body shrink-0"
                   >
-                    remover
+                    {isDeleting ? 'apagando...' : 'remover'}
                   </button>
                 </div>
                 {openGroupId === g.id && (
                   <GroupMembers groupId={g.id} idToken={idToken} />
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </ZineFrame>

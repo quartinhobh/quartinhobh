@@ -28,6 +28,7 @@ export const UsersPanel: React.FC = () => {
   const [invites, setInvites] = useState<RoleInvite[]>([]);
   const [filter, setFilter] = useState<'all' | 'admin' | 'moderator'>('all');
   const [busy, setBusy] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   // invite form
   const [invEmail, setInvEmail] = useState('');
@@ -70,12 +71,19 @@ export const UsersPanel: React.FC = () => {
   }
 
   async function handleDeleteInvite(email: string): Promise<void> {
-    if (!idToken) return;
+    if (!idToken || deletingIds.has(email)) return;
+    setDeletingIds((s) => new Set(s).add(email));
     try {
       await deleteInvite(email, idToken);
       await refresh();
     } catch (err) {
       alert(`Erro: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDeletingIds((s) => {
+        const next = new Set(s);
+        next.delete(email);
+        return next;
+      });
     }
   }
 
@@ -116,18 +124,22 @@ export const UsersPanel: React.FC = () => {
           <div className="mt-4">
             <h4 className="font-display text-sm text-zine-burntOrange mb-2">Convites pendentes</h4>
             <ul className="flex flex-col gap-1">
-              {invites.map((inv) => (
-                <li key={inv.email} className="flex items-center justify-between gap-3 font-body text-sm text-zine-burntOrange">
+              {invites.map((inv) => {
+                const isDeleting = deletingIds.has(inv.email);
+                return (
+                <li key={inv.email} className={`flex items-center justify-between gap-3 font-body text-sm text-zine-burntOrange ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
                   <span>{inv.email} — {ROLE_LABELS[inv.role]}</span>
                   <button
                     type="button"
                     onClick={() => void handleDeleteInvite(inv.email)}
+                    disabled={isDeleting}
                     className="text-zine-burntOrange/60 underline text-xs"
                   >
-                    remover
+                    {isDeleting ? 'apagando...' : 'remover'}
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         )}

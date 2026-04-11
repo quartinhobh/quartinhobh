@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useEvent } from '@/hooks/useEvent';
 import { useVotes } from '@/hooks/useVotes';
 import { useRsvp } from '@/hooks/useRsvp';
 import { useAuth } from '@/hooks/useAuth';
+import { useIdToken } from '@/hooks/useIdToken';
 import { AlbumDisplay } from '@/components/events/AlbumDisplay';
 import { TrackList } from '@/components/events/TrackList';
 import { RsvpButton } from '@/components/rsvp/RsvpButton';
@@ -23,16 +24,10 @@ function shouldShowLocation(eventDate: string): boolean {
 }
 
 export const Listen: React.FC = () => {
-  const { event, album, tracks, loading, error } = useEvent(null);
+  const { event, album, tracks, initialRsvpSummary, loading, error } = useEvent(null);
 
   const { user } = useAuth();
-  const [idToken, setIdToken] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) { setIdToken(null); return; }
-    void user.getIdToken().then((t) => { if (!cancelled) setIdToken(t); });
-    return () => { cancelled = true; };
-  }, [user]);
+  const idToken = useIdToken();
 
   const { userVote, submitVote } = useVotes(
     event?.id ?? null,
@@ -44,6 +39,7 @@ export const Listen: React.FC = () => {
   const { summary: rsvpSummary, userEntry: rsvpEntry, submit: rsvpSubmit, cancel: rsvpCancel } = useRsvp(
     rsvpEnabled ? event?.id ?? null : null,
     idToken,
+    initialRsvpSummary,
   );
 
   if (loading) {
@@ -128,12 +124,20 @@ export const Listen: React.FC = () => {
         </div>
       </ZineFrame>
 
-      {/* RSVP — only for upcoming/live events with RSVP enabled */}
-      {rsvpEnabled && event.rsvp && rsvpSummary && (isUpcoming || isLive) && (
+      {/* RSVP — render the frame as soon as we know RSVP is enabled, even
+          before the summary lands. The frame keeps its slot in the layout so
+          the page doesn't shift when counts arrive a moment later. */}
+      {rsvpEnabled && event.rsvp && (isUpcoming || isLive) && (
         <ZineFrame bg="cream" borderColor="burntYellow">
           <div className="flex flex-col gap-3">
-            <RsvpStatus summary={rsvpSummary} />
-            {isUpcoming && (
+            {rsvpSummary ? (
+              <RsvpStatus summary={rsvpSummary} />
+            ) : (
+              <div className="font-body text-sm text-zine-burntOrange/60 italic text-center py-2">
+                carregando lista…
+              </div>
+            )}
+            {isUpcoming && rsvpSummary && (
               <RsvpButton
                 config={event.rsvp}
                 summary={rsvpSummary}

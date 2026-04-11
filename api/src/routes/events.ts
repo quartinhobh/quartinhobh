@@ -13,6 +13,7 @@ import {
   listEvents,
   updateEvent,
 } from '../services/eventService';
+import { getRsvpSummary } from '../services/rsvpService';
 import type { Event, EventCreatePayload } from '../types';
 import { rsvpRouter } from './rsvp';
 
@@ -52,21 +53,30 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
 
 eventsRouter.get('/current', async (_req: Request, res: Response) => {
   try {
+    let event: Event | null;
     if (currentCache && Date.now() - currentCache.at < CACHE_TTL) {
-      if (!currentCache.data) {
-        res.status(404).json({ error: 'no_current_event' });
-        return;
-      }
-      res.status(200).json({ event: currentCache.data });
-      return;
+      event = currentCache.data;
+    } else {
+      event = await getCurrentEvent();
+      currentCache = { data: event, at: Date.now() };
     }
-    const event = await getCurrentEvent();
-    currentCache = { data: event, at: Date.now() };
     if (!event) {
       res.status(404).json({ error: 'no_current_event' });
       return;
     }
-    res.status(200).json({ event });
+    // Inline the RSVP summary so the client doesn't need a follow-up roundtrip
+    // before rendering the RSVP block. We fetch summary best-effort — if it
+    // throws (e.g. transient Firestore hiccup), the client falls back to its
+    // own /events/:id/rsvp request, so this never blocks event rendering.
+    let rsvpSummary = null;
+    if (event.rsvp?.enabled) {
+      try {
+        rsvpSummary = await getRsvpSummary(event.id);
+      } catch (err) {
+        console.error('[GET /events/current] rsvp_summary_inline_failed', err);
+      }
+    }
+    res.status(200).json({ event, rsvpSummary });
   } catch (err) {
     console.error('[GET /events/current]', err);
     res.status(500).json({ error: 'current_failed' });

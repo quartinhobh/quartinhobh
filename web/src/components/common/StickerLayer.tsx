@@ -42,7 +42,10 @@ export default function StickerLayer() {
               alt=""
               draggable={false}
               className="block w-[88px] h-[88px] sm:w-[112px] sm:h-[112px] select-none"
-              style={{ filter: 'drop-shadow(3px 3px 0 rgba(0,0,0,0.35))' }}
+              style={{
+                filter:
+                  'drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 2px 0 #fff) drop-shadow(-2px 2px 0 #fff) drop-shadow(2px -2px 0 #fff) drop-shadow(-2px -2px 0 #fff) drop-shadow(3px 3px 0 rgba(0,0,0,0.35))',
+              }}
             />
           </button>
         );

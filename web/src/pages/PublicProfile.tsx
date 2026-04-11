@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProfileByUsername, type UserProfile } from '@/services/api';
+import { fetchProfileByUsername, trackProfileVisit, type UserProfile } from '@/services/api';
+import { useIdToken } from '@/hooks/useIdToken';
 import { ZineFrame } from '@/components/common/ZineFrame';
 import UserAvatar from '@/components/common/UserAvatar';
 
@@ -14,6 +15,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 export const PublicProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
+  const idToken = useIdToken();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,13 @@ export const PublicProfile: React.FC = () => {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [username]);
+
+  // Fire-and-forget profile visit counter. Runs once per (username, token)
+  // pair — the API ignores self-views and silently no-ops on errors.
+  useEffect(() => {
+    if (!username) return;
+    void trackProfileVisit(username, idToken);
+  }, [username, idToken]);
 
   if (loading) {
     return (

@@ -6,12 +6,13 @@ import {
   fetchMusicBrainzTracks,
 } from '@/services/api';
 import { useApiCache } from '@/store/apiCache';
-import type { Event, MusicBrainzRelease, MusicBrainzTrack } from '@/types';
+import type { Event, MusicBrainzRelease, MusicBrainzTrack, RsvpSummary } from '@/types';
 
 export interface UseEventResult {
   event: Event | null;
   album: MusicBrainzRelease | null;
   tracks: MusicBrainzTrack[];
+  initialRsvpSummary: RsvpSummary | null;
   loading: boolean;
   error: string | null;
 }
@@ -24,12 +25,21 @@ interface CachedEventData {
   event: Event | null;
   album: MusicBrainzRelease | null;
   tracks: MusicBrainzTrack[];
+  initialRsvpSummary: RsvpSummary | null;
 }
 
 async function fetchEventData(
   eventId: string | null,
 ): Promise<CachedEventData> {
-  const ev = eventId ? await fetchEventById(eventId) : await fetchCurrentEvent();
+  let ev: Event | null;
+  let initialRsvpSummary: RsvpSummary | null = null;
+  if (eventId) {
+    ev = await fetchEventById(eventId);
+  } else {
+    const current = await fetchCurrentEvent();
+    ev = current?.event ?? null;
+    initialRsvpSummary = current?.rsvpSummary ?? null;
+  }
 
   let alb: MusicBrainzRelease | null = null;
   let trks: MusicBrainzTrack[] = [];
@@ -52,7 +62,7 @@ async function fetchEventData(
     trks = tracksData.length > 0 ? tracksData : albumData.tracks;
   }
 
-  return { event: ev, album: alb, tracks: trks };
+  return { event: ev, album: alb, tracks: trks, initialRsvpSummary };
 }
 
 export function useEvent(eventId: string | null): UseEventResult {
@@ -90,6 +100,7 @@ export function useEvent(eventId: string | null): UseEventResult {
     event: data?.event ?? null,
     album: data?.album ?? null,
     tracks: data?.tracks ?? [],
+    initialRsvpSummary: data?.initialRsvpSummary ?? null,
     loading,
     error,
   };
