@@ -335,7 +335,7 @@ export const Profile: React.FC = () => {
               <span className="font-body text-xs text-red-600 dark:text-red-400">{usernameError}</span>
             ) : (
               <span className="font-body text-xs text-zine-burntOrange/60">
-                3-20 caracteres. Letras, números, _ ou -. <br /> Ficaria p/ acessar como: {username && `quartinhobh.com/u/${username}`}
+                3-20 caracteres. Letras, números, _ ou -. <br /> Ficaria p/ acessar como: {username && `quartinhobh.web.app/u/${username}`}
               </span>
             )}
           </label>

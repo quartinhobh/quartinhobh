@@ -12,7 +12,7 @@ Express + Firebase.
 
 - Página de Lojinha - para ver coisas p/ comprar com PIX
 - Chat em tempo real — Conversa ao vivo via Firebase Realtime Database
-- Votação de favoritos — Sistema de votos para eleger músicas/discos favoritos
+- Votação de músicas preferidas/detestadas — Sistema de votos para eleger músicas/discos favoritos
 - Galeria de fotos — Upload de fotos com placeholder borrado (blur)
 - Buscar letras — Integração com serviço de letras de músicas do album
 - Sistema de moderação — Banimento e exclusão de mensagens no chat
@@ -26,6 +26,8 @@ Express + Firebase.
 - RSVP - Confirmação ativavel/desativel customizavel p/ eventos futuros.
 - Email Sociais + Templates - Facilitar trocas e envios de e-mails
 - Modo de Ajuda p/ Administradores - caixas que explica os paines de admin ( desativavel p/ diminuir feiura de UI)
+- Stickers - Sticker aparecem e podem ser clicados ( que caem logo depois )
+- Paginá Social p/ usuarios + albums favoritos
 
 ## Stack
 

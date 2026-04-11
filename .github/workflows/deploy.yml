@@ -60,5 +60,5 @@ jobs:
           VITE_FIREBASE_CONFIG: ${{ secrets.VITE_FIREBASE_CONFIG }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
-      - name: Deploy to Firebase (hosting + firestore rules + firestore indexes)
-        run: bunx firebase-tools deploy --only hosting,firestore:rules,firestore:indexes --project ${{ secrets.FIREBASE_PROJECT_ID }} --token "${{ secrets.FIREBASE_TOKEN }}"
+      - name: Deploy to Firebase (hosting + firestore rules + firestore indexes + RTDB rules)
+        run: bunx firebase-tools deploy --only hosting,firestore:rules,firestore:indexes,database --project ${{ secrets.FIREBASE_PROJECT_ID }} --token "${{ secrets.FIREBASE_TOKEN }}"

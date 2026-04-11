@@ -47,12 +47,31 @@ function crc16(str: string): string {
   return (crc & 0xffff).toString(16).toUpperCase().padStart(4, '0');
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="font-body text-sm px-3 py-1 bg-zine-burntOrange text-zine-cream rounded-sm transition-colors hover:bg-zine-burntOrange/80"
+    >
+      {copied ? 'copiado!' : 'copiar chave'}
+    </button>
+  );
+}
+
 function PixQrCode({ config }: { config: PixConfig }) {
   const [src, setSrc] = useState<string | null>(null);
   const payload = pixPayload(config);
 
   useEffect(() => {
-    // Dynamic import of qrcode lib (lightweight, only loaded when PIX exists).
     void import('qrcode')
       .then((mod) => mod.default ?? mod)
       .then((QRCode) =>
@@ -71,14 +90,7 @@ function PixQrCode({ config }: { config: PixConfig }) {
           gerando QR…
         </div>
       )}
-      {
-        /* TODO pensar em talvez remover isso futuramente */
-        /* <div className="text-center font-body text-sm text-zine-cream">
-        <p className="font-bold">{config.beneficiary}</p>
-        <p>{config.city}</p>
-        <p className="text-xs mt-1 opacity-70 break-all">{config.key}</p>
-        </div> */
-      }
+      {config.key && <CopyButton text={config.key} />}
     </div>
   );
 }

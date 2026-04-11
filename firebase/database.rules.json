@@ -1,8 +1,10 @@
 {
   "rules": {
+    ".write": "auth != null",
     "chats": {
       "$eventId": {
         ".read": "auth != null",
+        ".write": "auth != null",
         "messages": {
           "$messageId": {
             ".write": "auth != null && !root.child('bans').child(auth.uid).exists() && !data.child('isDeleted').exists()",

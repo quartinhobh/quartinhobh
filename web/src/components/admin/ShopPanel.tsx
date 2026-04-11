@@ -1,19 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import React, { useEffect, useRef, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -247,28 +232,39 @@ function SortableProductItem({
   product,
   onDelete,
   isDeleting,
+  idx,
+  dropTarget,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
 }: {
   product: Product;
   onDelete: (id: string) => void;
   isDeleting: boolean;
+  idx: number;
+  dropTarget: { idx: number; half: 'top' | 'bottom' } | null;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent, idx: number) => void;
+  onDrop: (e: React.DragEvent, idx: number) => void;
+  onDragEnd: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: product.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : isDeleting ? 0.5 : 1,
-    zIndex: isDragging ? 50 : undefined,
-  };
+  const isDropTop = dropTarget?.idx === idx && dropTarget.half === 'top';
+  const isDropBottom = dropTarget?.idx === idx && dropTarget.half === 'bottom';
 
   return (
     <li
-      ref={setNodeRef}
-      style={style}
-      className={`flex items-center justify-between gap-3 border-b border-zine-burntOrange/20 pb-2 ${isDeleting ? 'pointer-events-none' : ''}`}
+      draggable={!isDeleting}
+      onDragStart={onDragStart}
+      onDragOver={(e) => { if (!isDeleting) onDragOver(e, idx); }}
+      onDrop={(e) => { if (!isDeleting) onDrop(e, idx); }}
+      onDragEnd={onDragEnd}
+      className={`flex items-center justify-between gap-3 border-b border-zine-burntOrange/20 pb-2 relative ${isDeleting ? 'pointer-events-none opacity-50' : ''}`}
     >
-      <div {...attributes} {...listeners} className="touch-none shrink-0">
+      {isDropTop && (
+        <div className="absolute -top-1 left-0 right-0 h-1 bg-zine-burntOrange rounded-full" />
+      )}
+      <div className="touch-none shrink-0 cursor-grab">
         <DragHandle />
       </div>
       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -290,11 +286,14 @@ function SortableProductItem({
       <Button onClick={() => void onDelete(product.id)} disabled={isDeleting}>
         {isDeleting ? 'apagando...' : 'apagar'}
       </Button>
+      {isDropBottom && (
+        <div className="absolute -bottom-1 left-0 right-0 h-1 bg-zine-burntOrange rounded-full" />
+      )}
     </li>
   );
 }
 
-// ── Sortable product list with DnD context ─────────────────────────────
+// ── Sortable product list with native DnD ─────────────────────────────
 
 function SortableProductList({
   products,
@@ -307,29 +306,76 @@ function SortableProductList({
   onDelete: (id: string) => void;
   deletingIds: Set<string>;
 }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const dragIdx = useRef<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ idx: number; half: 'top' | 'bottom' } | null>(null);
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIdx = products.findIndex((p) => p.id === active.id);
-    const newIdx = products.findIndex((p) => p.id === over.id);
-    if (oldIdx < 0 || newIdx < 0) return;
-    onReorder(arrayMove(products, oldIdx, newIdx));
-  }
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const half = e.clientY < rect.top + rect.height / 2 ? 'top' : 'bottom';
+    setDropTarget({ idx, half });
+  };
+
+  const moveItem = async (fromIdx: number, insertAt: number) => {
+    if (fromIdx === insertAt) return;
+    const next = [...products];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(insertAt, 0, moved!);
+    setDropTarget(null);
+    dragIdx.current = null;
+    await onReorder(next);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    const fromIdx = dragIdx.current;
+    if (fromIdx === null) { setDropTarget(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const half = e.clientY < rect.top + rect.height / 2 ? 'top' : 'bottom';
+    let insertAt = half === 'top' ? targetIdx : targetIdx + 1;
+    if (fromIdx < insertAt) insertAt--;
+    void moveItem(fromIdx, insertAt);
+  };
+
+  const handleEdgeDrop = (e: React.DragEvent, position: 'first' | 'last') => {
+    e.preventDefault();
+    const fromIdx = dragIdx.current;
+    if (fromIdx === null) { setDropTarget(null); return; }
+    const target = position === 'first' ? 0 : (fromIdx < products.length ? products.length - 1 : products.length);
+    void moveItem(fromIdx, target);
+  };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={products.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-        <ul className="flex flex-col gap-2">
-          {products.map((p) => (
-            <SortableProductItem key={p.id} product={p} onDelete={onDelete} isDeleting={deletingIds.has(p.id)} />
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
+    <ul className="flex flex-col gap-0">
+      {/* Top edge drop zone */}
+      <li
+        onDragOver={(e) => { e.preventDefault(); setDropTarget({ idx: 0, half: 'top' }); }}
+        onDrop={(e) => handleEdgeDrop(e, 'first')}
+        onDragEnd={() => { dragIdx.current = null; setDropTarget(null); }}
+        className={`h-3 -mb-1 ${dropTarget?.idx === 0 && dropTarget.half === 'top' ? 'bg-zine-burntOrange/30' : ''}`}
+      />
+      {products.map((p, idx) => (
+        <SortableProductItem
+          key={p.id}
+          product={p}
+          onDelete={onDelete}
+          isDeleting={deletingIds.has(p.id)}
+          idx={idx}
+          dropTarget={dropTarget}
+          onDragStart={() => { dragIdx.current = idx; }}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onDragEnd={() => { dragIdx.current = null; setDropTarget(null); }}
+        />
+      ))}
+      {/* Bottom edge drop zone */}
+      <li
+        onDragOver={(e) => { e.preventDefault(); setDropTarget({ idx: products.length, half: 'bottom' }); }}
+        onDrop={(e) => handleEdgeDrop(e, 'last')}
+        onDragEnd={() => { dragIdx.current = null; setDropTarget(null); }}
+        className={`h-3 -mt-1 ${dropTarget?.idx === products.length && dropTarget.half === 'bottom' ? 'bg-zine-burntOrange/30' : ''}`}
+      />
+    </ul>
   );
 }
 
