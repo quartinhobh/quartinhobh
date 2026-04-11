@@ -4,6 +4,7 @@ import { fetchProfileByUsername, trackProfileVisit, type UserProfile } from '@/s
 import { useIdToken } from '@/hooks/useIdToken';
 import { ZineFrame } from '@/components/common/ZineFrame';
 import UserAvatar from '@/components/common/UserAvatar';
+import { LoadingState } from '@/components/common/LoadingState';
 
 const PLATFORM_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -37,11 +38,7 @@ export const PublicProfile: React.FC = () => {
   }, [username, idToken]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <span className="font-body text-zine-burntOrange animate-pulse">Carregando...</span>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (notFound || !profile) {

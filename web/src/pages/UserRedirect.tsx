@@ -3,6 +3,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { fetchUserProfile, type UserProfile } from '@/services/api';
 import { ZineFrame } from '@/components/common/ZineFrame';
 import UserAvatar from '@/components/common/UserAvatar';
+import { LoadingState } from '@/components/common/LoadingState';
 
 const PLATFORM_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -32,11 +33,7 @@ const UserRedirect: React.FC = () => {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <span className="font-body text-zine-burntOrange animate-pulse">Carregando...</span>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (notFound || !profile) {

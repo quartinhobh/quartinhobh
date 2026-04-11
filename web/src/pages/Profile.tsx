@@ -8,6 +8,7 @@ import { useMusicBrainzSearch } from '@/hooks/useMusicBrainzSearch';
 import MbResultsList from '@/components/common/MbResultsList';
 import type { FavoriteAlbum, SocialLink, SocialPlatform } from '@/types';
 import { ZineFrame } from '@/components/common/ZineFrame';
+import { LoadingState } from '@/components/common/LoadingState';
 import Button from '@/components/common/Button';
 import UserAvatar from '@/components/common/UserAvatar';
 
@@ -246,11 +247,7 @@ export const Profile: React.FC = () => {
   };
 
   if (!loaded) {
-    return (
-      <div className="flex justify-center py-12">
-        <span className="font-body text-zine-burntOrange animate-pulse">Carregando...</span>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
