@@ -47,9 +47,29 @@ describe('EventForm', () => {
     expect(screen.getByLabelText('startTime')).toBeInTheDocument();
     expect(screen.getByLabelText('endTime')).toBeInTheDocument();
     expect(screen.getByLabelText('location')).toBeInTheDocument();
+    expect(screen.getByLabelText('venueRevealDaysBefore')).toBeInTheDocument();
     expect(screen.getByLabelText('extras-text')).toBeInTheDocument();
     expect(screen.getByLabelText('spotifyPlaylistUrl')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/OK Computer/i)).toBeInTheDocument();
+  });
+
+  it('pre-fills default time (19:00-23:00) and reveal days (7) in create mode', () => {
+    render(<EventForm mode="create" idToken="tok" />);
+    expect(screen.getByLabelText('startTime')).toHaveValue('19:00');
+    expect(screen.getByLabelText('endTime')).toHaveValue('23:00');
+    expect(screen.getByLabelText('venueRevealDaysBefore')).toHaveValue(7);
+  });
+
+  it('pre-fills date with the 4th Wednesday of the current (or next) month in create mode', () => {
+    render(<EventForm mode="create" idToken="tok" />);
+    const dateInput = screen.getByLabelText('date') as HTMLInputElement;
+    const value = dateInput.value;
+    expect(value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const d = new Date(value + 'T00:00:00');
+    expect(d.getDay()).toBe(3); // Wednesday
+    const day = d.getDate();
+    expect(day).toBeGreaterThanOrEqual(22);
+    expect(day).toBeLessThanOrEqual(28);
   });
 
   it('submit in create mode calls createEvent with the payload', async () => {

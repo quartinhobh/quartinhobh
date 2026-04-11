@@ -78,7 +78,7 @@ export async function createEvent(
     startTime: payload.startTime,
     endTime: payload.endTime,
     location: payload.location ?? null,
-    venueRevealDaysBefore: payload.venueRevealDaysBefore ?? 3,
+    venueRevealDaysBefore: payload.venueRevealDaysBefore ?? 7,
     status: 'upcoming' satisfies EventStatus,
     album,
     extras: payload.extras,

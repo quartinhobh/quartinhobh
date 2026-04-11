@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import { auth } from '@/services/firebase';
@@ -7,6 +7,11 @@ import { useIdToken } from '@/hooks/useIdToken';
 import { useMusicBrainzSearch } from '@/hooks/useMusicBrainzSearch';
 import MbResultsList from '@/components/common/MbResultsList';
 import HelperBox from '@/components/admin/HelperBox';
+import {
+  getDefaultEventDate,
+  formatLocalDate,
+  isFourthWednesday,
+} from '@/utils/wednesdays';
 import type { Event, RsvpApprovalMode } from '@/types';
 
 export interface EventFormProps {
@@ -19,18 +24,118 @@ export interface EventFormProps {
 const inputClass =
   'border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2 focus:outline-none focus:border-zine-burntOrange';
 
+const WEEKDAY_LABELS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+interface ZineDatePickerProps {
+  value: string; // YYYY-MM-DD
+  onChange: (next: string) => void;
+}
+
+const ZineDatePicker: React.FC<ZineDatePickerProps> = ({ value, onChange }) => {
+  const parsed = value ? new Date(value + 'T00:00:00') : new Date();
+  const [viewYear, setViewYear] = useState(parsed.getFullYear());
+  const [viewMonth, setViewMonth] = useState(parsed.getMonth());
+
+  const cells = useMemo(() => {
+    const first = new Date(viewYear, viewMonth, 1);
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const leading = first.getDay();
+    const out: (Date | null)[] = [];
+    for (let i = 0; i < leading; i++) out.push(null);
+    for (let d = 1; d <= daysInMonth; d++) out.push(new Date(viewYear, viewMonth, d));
+    while (out.length % 7 !== 0) out.push(null);
+    return out;
+  }, [viewYear, viewMonth]);
+
+  const selectedKey = value;
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  function shiftMonth(delta: number) {
+    const next = new Date(viewYear, viewMonth + delta, 1);
+    setViewYear(next.getFullYear());
+    setViewMonth(next.getMonth());
+  }
+
+  return (
+    <div className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark p-2 font-body text-zine-burntOrange dark:text-zine-cream">
+      <div className="flex items-center justify-between mb-2">
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          aria-label="mês anterior"
+          className="px-2 py-1 font-bold hover:text-zine-burntYellow"
+        >
+          ◀
+        </button>
+        <span className="font-display text-sm lowercase">{monthLabel}</span>
+        <button
+          type="button"
+          onClick={() => shiftMonth(1)}
+          aria-label="próximo mês"
+          className="px-2 py-1 font-bold hover:text-zine-burntYellow"
+        >
+          ▶
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-xs opacity-70 mb-1">
+        {WEEKDAY_LABELS.map((w) => (
+          <div key={w}>{w}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const key = formatLocalDate(d);
+          const isSelected = key === selectedKey;
+          const isFourthWed = isFourthWednesday(d);
+          const base =
+            'text-center text-sm py-1 border-2 cursor-pointer transition-colors';
+          const tone = isSelected
+            ? 'bg-zine-burntOrange text-zine-cream border-zine-burntOrange'
+            : isFourthWed
+              ? 'bg-zine-burntYellow/30 border-zine-burntOrange hover:bg-zine-burntYellow/60'
+              : 'border-transparent hover:bg-zine-burntYellow/20';
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onChange(key)}
+              aria-label={key}
+              aria-pressed={isSelected}
+              className={`${base} ${tone}`}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const EventForm: React.FC<EventFormProps> = ({
   mode,
   initial,
   onSaved,
 }) => {
   const idToken = useIdToken();
+  const isCreate = mode === 'create';
+  const defaultDate = useMemo(
+    () => (isCreate ? formatLocalDate(getDefaultEventDate()) : ''),
+    [isCreate],
+  );
   const [mbAlbumId, setMbAlbumId] = useState(initial?.mbAlbumId ?? '');
   const [title, setTitle] = useState(initial?.title ?? '');
-  const [date, setDate] = useState(initial?.date ?? '');
-  const [startTime, setStartTime] = useState(initial?.startTime ?? '');
-  const [endTime, setEndTime] = useState(initial?.endTime ?? '');
+  const [date, setDate] = useState(initial?.date ?? defaultDate);
+  const [startTime, setStartTime] = useState(initial?.startTime ?? (isCreate ? '19:00' : ''));
+  const [endTime, setEndTime] = useState(initial?.endTime ?? (isCreate ? '23:00' : ''));
   const [location, setLocation] = useState(initial?.location ?? '');
+  const [venueRevealDaysBefore, setVenueRevealDaysBefore] = useState<string>(
+    initial?.venueRevealDaysBefore != null ? String(initial.venueRevealDaysBefore) : '7',
+  );
   const [extrasText, setExtrasText] = useState(initial?.extras?.text ?? '');
   const extrasLinks = (initial?.extras?.links ?? []).map((l) => `${l.label}|${l.url}`).join('\n');
   const extrasImages = (initial?.extras?.images ?? []).join('\n');
@@ -93,9 +198,12 @@ export const EventForm: React.FC<EventFormProps> = ({
         opensAt: rsvpOpensAt ? new Date(rsvpOpensAt).getTime() : null,
         closesAt: rsvpClosesAt ? new Date(rsvpClosesAt).getTime() : null,
       } : { enabled: false, capacity: null, waitlistEnabled: false, plusOneAllowed: false, approvalMode: 'auto' as const, opensAt: null, closesAt: null };
+      const parsedReveal = Number(venueRevealDaysBefore);
       const payload = {
         mbAlbumId, title, date, startTime, endTime,
         location: location || null,
+        venueRevealDaysBefore:
+          Number.isFinite(parsedReveal) && parsedReveal >= 0 ? Math.floor(parsedReveal) : 3,
         extras: { text: extrasText, links, images },
         spotifyPlaylistUrl: spotifyPlaylistUrl || null,
         rsvp,
@@ -165,10 +273,18 @@ export const EventForm: React.FC<EventFormProps> = ({
           <input aria-label="title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
         </label>
 
-        <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
-          <span>Data</span>
-          <input type="date" aria-label="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-        </label>
+        <div className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
+          <label htmlFor="event-date-hidden">Data</label>
+          <input
+            id="event-date-hidden"
+            type="hidden"
+            aria-label="date"
+            value={date}
+            readOnly
+          />
+          <ZineDatePicker value={date} onChange={setDate} />
+          <span className="text-xs opacity-70 italic">4ªs quartas em destaque</span>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
@@ -184,6 +300,18 @@ export const EventForm: React.FC<EventFormProps> = ({
         <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
           <span>Local</span>
           <input aria-label="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="ex: Quartinho BH — Rua Exemplo, 123" className={inputClass} />
+        </label>
+
+        <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
+          <span>Mostrar local quantos dias antes</span>
+          <input
+            type="number"
+            min={0}
+            aria-label="venueRevealDaysBefore"
+            value={venueRevealDaysBefore}
+            onChange={(e) => setVenueRevealDaysBefore(e.target.value)}
+            className={inputClass}
+          />
         </label>
 
         <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">

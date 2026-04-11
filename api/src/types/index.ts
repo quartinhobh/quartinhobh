@@ -86,7 +86,7 @@ export interface Event {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   location: string | null; // venue / address
-  venueRevealDaysBefore?: number; // days before event date when location becomes public (default 3)
+  venueRevealDaysBefore?: number; // days before event date when location becomes public (default 7)
   status: EventStatus;
   album: EventAlbumSnapshot | null; // populated on create, avoids MB re-fetch
   extras: EventExtras;

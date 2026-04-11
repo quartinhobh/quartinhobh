@@ -12,7 +12,7 @@ import { RsvpStatus } from '@/components/rsvp/RsvpStatus';
 import { EventDetailSkeleton } from '@/components/common/LoadingState';
 import ZineFrame from '@/components/common/ZineFrame';
 
-const DEFAULT_LOCATION_REVEAL_DAYS = 3;
+const DEFAULT_LOCATION_REVEAL_DAYS = 7;
 
 function shouldShowLocation(eventDate: string, revealDays: number): boolean {
   const event = new Date(eventDate + 'T00:00:00');
