@@ -281,14 +281,18 @@ const TemplateList: React.FC<{
 
 // ─── Main panel ───────────────────────────────────────────────────────
 
-export const EmailTemplatesPanel: React.FC<{ idToken: string | null }> = ({ idToken }) => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+export const EmailTemplatesPanel: React.FC<{
+  idToken: string | null;
+  initialTemplates?: EmailTemplate[];
+}> = ({ idToken, initialTemplates }) => {
+  const [templates, setTemplates] = useState<EmailTemplate[]>(initialTemplates ?? []);
+  const [loading, setLoading] = useState(!initialTemplates);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EmailTemplate | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialTemplates) return;
     if (!idToken) return;
     void fetchEmailTemplates(idToken)
       .then((t) => {
@@ -296,10 +300,10 @@ export const EmailTemplatesPanel: React.FC<{ idToken: string | null }> = ({ idTo
         setLoading(false);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar templates');
+        setError(err instanceof Error ? err.message : 'Erro ao carregar os modelos');
         setLoading(false);
       });
-  }, [idToken]);
+  }, [idToken, initialTemplates]);
 
   async function handleToggle(t: EmailTemplate, enabled: boolean) {
     if (!idToken) return;

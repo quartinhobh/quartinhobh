@@ -161,7 +161,7 @@ const AdminPanelInner: React.FC = () => {
     { key: 'lojinha', label: 'Lojinha' },
     { key: 'pix', label: 'PIX' },
     { key: 'users', label: 'Usuários' },
-    { key: 'email', label: 'Email' },
+    { key: 'email', label: 'E-mail' },
     { key: 'linktree', label: 'Links' },
     { key: 'banners', label: 'Banners' },
     { key: 'stickers', label: 'Stickers' },

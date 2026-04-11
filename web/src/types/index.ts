@@ -86,6 +86,7 @@ export interface Event {
   startTime: string;
   endTime: string;
   location: string | null;
+  venueRevealDaysBefore?: number;
   status: EventStatus;
   album: EventAlbumSnapshot | null;
   extras: EventExtras;

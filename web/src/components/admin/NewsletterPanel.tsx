@@ -19,6 +19,7 @@ import {
   updateEmailConfig,
   fetchUnsubscribed,
   resubscribeUser,
+  fetchEmailTemplates,
   type ContactGroup,
   type GroupMember,
   type EmailCampaign,
@@ -27,41 +28,69 @@ import {
 } from '@/services/api';
 import HelperBox from '@/components/admin/HelperBox';
 import { EmailTemplatesPanel } from '@/components/admin/EmailTemplatesPanel';
-import type { User } from '@/types';
+import type { EmailTemplate, User } from '@/types';
 
 const inputClass =
   'font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange w-full';
 
-type Mode = 'newsletter' | 'single' | 'groups' | 'history' | 'config' | 'templates';
+type Mode = 'newsletter' | 'single' | 'groups' | 'templates' | 'history' | 'config';
+
+interface InitialData {
+  limits: EmailLimits;
+  groups: ContactGroup[];
+  templates: EmailTemplate[];
+  campaigns: EmailCampaign[];
+  config: { autoEventEmail: boolean };
+  unsubscribed: UnsubscribedUser[];
+}
 
 export const NewsletterPanel: React.FC = () => {
   const idToken = useIdToken();
   const [mode, setMode] = useState<Mode>('newsletter');
-  const [limits, setLimits] = useState<EmailLimits | null>(null);
+  const [data, setData] = useState<InitialData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!idToken) return;
-    void fetchEmailLimits(idToken).then(setLimits);
+    setData(null);
+    setError(null);
+    Promise.all([
+      fetchEmailLimits(idToken),
+      fetchContactGroups(idToken),
+      fetchEmailTemplates(idToken),
+      fetchCampaigns(idToken),
+      fetchEmailConfig(idToken),
+      fetchUnsubscribed(idToken),
+    ])
+      .then(([limits, groups, templates, campaigns, config, unsubscribed]) => {
+        setData({ limits, groups, templates, campaigns, config, unsubscribed });
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar painel de e-mail');
+      });
   }, [idToken]);
+
+  if (error) return <p className="font-body text-zine-burntOrange p-4">{error}</p>;
+  if (!data) return <LoadingState />;
+
+  const { limits } = data;
 
   return (
     <div className="flex flex-col gap-4">
-      <HelperBox>Envie emails, gerencie grupos de distribuição e acompanhe o histórico de campanhas.</HelperBox>
-      {limits && (
-        <div className="font-body text-sm text-zine-burntOrange/70 dark:text-zine-cream/70 bg-zine-cream dark:bg-zine-surface-dark border-2 border-dashed border-zine-burntYellow rounded px-3 py-2">
-          Hoje: <strong>{limits.dailyRemaining}/{limits.dailyLimit}</strong>
-          &nbsp;·&nbsp;Mês: <strong>{limits.monthlyRemaining}/{limits.monthlyLimit}</strong>
-          &nbsp;·&nbsp;Máx. por grupo: <strong>{limits.maxGroupSize}</strong>
-        </div>
-      )}
+      <HelperBox>Envie e-mails, gerencie grupos de contato, edite os modelos automáticos e acompanhe o histórico de envios.</HelperBox>
+      <div className="font-body text-sm text-zine-burntOrange/70 dark:text-zine-cream/70 bg-zine-cream dark:bg-zine-surface-dark border-2 border-dashed border-zine-burntYellow rounded px-3 py-2">
+        Hoje: <strong>{limits.dailyRemaining}/{limits.dailyLimit}</strong>
+        &nbsp;·&nbsp;Mês: <strong>{limits.monthlyRemaining}/{limits.monthlyLimit}</strong>
+        &nbsp;·&nbsp;Máx. por grupo: <strong>{limits.maxGroupSize}</strong>
+      </div>
       <div className="flex flex-wrap gap-1.5 sm:gap-2">
         {([
           ['newsletter', 'Newsletter'],
-          ['single', 'Email avulso'],
+          ['single', 'E-mail avulso'],
           ['groups', 'Grupos'],
+          ['templates', 'Modelos'],
           ['history', 'Histórico'],
-          ['config', 'Config'],
-          ['templates', 'Templates RSVP'],
+          ['config', 'Configurações'],
         ] as [Mode, string][]).map(([m, label]) => (
           <Button
             key={m}
@@ -73,30 +102,34 @@ export const NewsletterPanel: React.FC = () => {
         ))}
       </div>
 
-      {mode === 'newsletter' && <NewsletterForm idToken={idToken} />}
+      {mode === 'newsletter' && <NewsletterForm idToken={idToken} initialGroups={data.groups} />}
       {mode === 'single' && <SingleEmailForm idToken={idToken} />}
-      {mode === 'groups' && <GroupsManager idToken={idToken} />}
-      {mode === 'history' && <CampaignHistory idToken={idToken} />}
-      {mode === 'config' && <EmailConfigPanel idToken={idToken} />}
-      {mode === 'templates' && <EmailTemplatesPanel idToken={idToken} />}
+      {mode === 'groups' && <GroupsManager idToken={idToken} initialGroups={data.groups} />}
+      {mode === 'templates' && <EmailTemplatesPanel idToken={idToken} initialTemplates={data.templates} />}
+      {mode === 'history' && <CampaignHistory initialCampaigns={data.campaigns} />}
+      {mode === 'config' && (
+        <EmailConfigPanel
+          idToken={idToken}
+          initialConfig={data.config}
+          initialUnsubscribed={data.unsubscribed}
+        />
+      )}
     </div>
   );
 };
 
 // ── Newsletter Form ──────────────────────────────────────────────────
 
-const NewsletterForm: React.FC<{ idToken: string | null }> = ({ idToken }) => {
+const NewsletterForm: React.FC<{
+  idToken: string | null;
+  initialGroups: ContactGroup[];
+}> = ({ idToken, initialGroups }) => {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
-  const [groups, setGroups] = useState<ContactGroup[]>([]);
+  const [groups] = useState<ContactGroup[]>(initialGroups);
   const [includeGroups, setIncludeGroups] = useState<string[]>([]);
   const [excludeGroups, setExcludeGroups] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
-
-  useEffect(() => {
-    if (!idToken) return;
-    void fetchContactGroups(idToken).then(setGroups);
-  }, [idToken]);
 
   function toggleGroup(id: string, list: string[], setList: (v: string[]) => void) {
     setList(list.includes(id) ? list.filter((g) => g !== id) : [...list, id]);
@@ -156,7 +189,7 @@ const NewsletterForm: React.FC<{ idToken: string | null }> = ({ idToken }) => {
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Conteúdo do email (aceita HTML/usa chatpgt p/isso)"
+          placeholder="Conteúdo do e-mail (aceita HTML — peça pro ChatGPT montar, se quiser)"
           rows={8}
           className={inputClass}
         />
@@ -265,7 +298,7 @@ const SingleEmailForm: React.FC<{ idToken: string | null }> = ({ idToken }) => {
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Conteúdo (aceita HTML/usa chatpgt p/isso)"
+          placeholder="Conteúdo (aceita HTML — peça pro ChatGPT montar, se quiser)"
           rows={6}
           className={inputClass}
         />
@@ -279,8 +312,11 @@ const SingleEmailForm: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
 // ── Groups Manager ───────────────────────────────────────────────────
 
-const GroupsManager: React.FC<{ idToken: string | null }> = ({ idToken }) => {
-  const [groups, setGroups] = useState<ContactGroup[]>([]);
+const GroupsManager: React.FC<{
+  idToken: string | null;
+  initialGroups: ContactGroup[];
+}> = ({ idToken, initialGroups }) => {
+  const [groups, setGroups] = useState<ContactGroup[]>(initialGroups);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
@@ -290,10 +326,6 @@ const GroupsManager: React.FC<{ idToken: string | null }> = ({ idToken }) => {
     if (!idToken) return;
     setGroups(await fetchContactGroups(idToken));
   }
-
-  useEffect(() => {
-    void refresh();
-  }, [idToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -636,18 +668,13 @@ const GroupMembers: React.FC<{ groupId: string; idToken: string | null }> = ({ g
 
 // ── Campaign History ─────────────────────────────────────────────────
 
-const CampaignHistory: React.FC<{ idToken: string | null }> = ({ idToken }) => {
-  const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
-
-  useEffect(() => {
-    if (!idToken) return;
-    void fetchCampaigns(idToken).then(setCampaigns);
-  }, [idToken]);
+const CampaignHistory: React.FC<{ initialCampaigns: EmailCampaign[] }> = ({ initialCampaigns }) => {
+  const [campaigns] = useState<EmailCampaign[]>(initialCampaigns);
 
   return (
     <ZineFrame bg="cream">
       <h3 className="font-display text-xl text-zine-burntOrange mb-3">Histórico de envios</h3>
-      <HelperBox>Histórico de todos os emails enviados pelo painel. Mostra data, assunto e quantas pessoas receberam.</HelperBox>
+      <HelperBox>Histórico de todos os e-mails enviados pelo painel. Mostra data, assunto e quantas pessoas receberam.</HelperBox>
       {campaigns.length === 0 ? (
         <p className="font-body italic text-zine-burntOrange/70">Nenhum envio ainda.</p>
       ) : (
@@ -671,32 +698,19 @@ const CampaignHistory: React.FC<{ idToken: string | null }> = ({ idToken }) => {
 
 // ── Email Config + Desinscritos ──────────────────────────────────────
 
-const EmailConfigPanel: React.FC<{ idToken: string | null }> = ({ idToken }) => {
-  const [autoEventEmail, setAutoEventEmail] = useState(true);
-  const [unsubscribed, setUnsubscribed] = useState<UnsubscribedUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  const [error, setError] = useState<string | null>(null);
+const EmailConfigPanel: React.FC<{
+  idToken: string | null;
+  initialConfig: { autoEventEmail: boolean };
+  initialUnsubscribed: UnsubscribedUser[];
+}> = ({ idToken, initialConfig, initialUnsubscribed }) => {
+  const [autoEventEmail, setAutoEventEmail] = useState(initialConfig.autoEventEmail);
+  const [unsubscribed, setUnsubscribed] = useState<UnsubscribedUser[]>(initialUnsubscribed);
 
   async function refresh() {
     if (!idToken) return;
-    try {
-      const [config, unsubs] = await Promise.all([
-        fetchEmailConfig(idToken),
-        fetchUnsubscribed(idToken),
-      ]);
-      setAutoEventEmail(config.autoEventEmail);
-      setUnsubscribed(unsubs);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar configurações');
-    } finally {
-      setLoading(false);
-    }
+    const unsubs = await fetchUnsubscribed(idToken);
+    setUnsubscribed(unsubs);
   }
-
-  useEffect(() => {
-    void refresh();
-  }, [idToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleToggleAutoEmail() {
     if (!idToken) return;
@@ -712,14 +726,11 @@ const EmailConfigPanel: React.FC<{ idToken: string | null }> = ({ idToken }) => 
     await refresh();
   }
 
-  if (loading) return <LoadingState />;
-  if (error) return <p className="font-body text-red-600">Erro: {error}</p>;
-
   return (
     <>
-      <HelperBox>Aqui você configura o envio automático de emails e vê quem se desinscreveu da newsletter. Usuários desinscritos não recebem mais emails, mas você pode reinscrevê-los manualmente.</HelperBox>
+      <HelperBox>Configurações gerais de e-mail: envios automáticos de eventos/RSVP e lista de pessoas que se desinscreveram. Os modelos de cada e-mail automático (confirmação, lembrete, etc.) ficam na aba "Modelos".</HelperBox>
       <ZineFrame bg="cream">
-        <h3 className="font-display text-xl text-zine-burntOrange mb-3">Configurações</h3>
+        <h3 className="font-display text-xl text-zine-burntOrange mb-3">Envios automáticos</h3>
         <label className="flex items-center gap-3 font-body text-zine-burntOrange cursor-pointer">
           <input
             type="checkbox"
@@ -728,9 +739,9 @@ const EmailConfigPanel: React.FC<{ idToken: string | null }> = ({ idToken }) => 
             className="w-5 h-5"
           />
           <div>
-            <span className="font-bold">Email automático de próximo evento</span>
+            <span className="font-bold">Avisar inscritos quando um novo evento for criado</span>
             <p className="text-xs text-zine-burntOrange/60">
-              Quando ativado, envia automaticamente um email para todos os inscritos quando um novo evento é criado.
+              Quando ativado, envia um e-mail para todos os inscritos na newsletter assim que um novo evento é publicado.
             </p>
           </div>
         </label>

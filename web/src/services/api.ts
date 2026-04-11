@@ -119,6 +119,8 @@ export interface EventCreatePayload {
   date: string;
   startTime: string;
   endTime: string;
+  location?: string | null;
+  venueRevealDaysBefore?: number;
   extras: EventExtras;
   spotifyPlaylistUrl: string | null;
 }

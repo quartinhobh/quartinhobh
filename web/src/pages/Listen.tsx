@@ -12,15 +12,14 @@ import { RsvpStatus } from '@/components/rsvp/RsvpStatus';
 import { EventDetailSkeleton } from '@/components/common/LoadingState';
 import ZineFrame from '@/components/common/ZineFrame';
 
-/** Days before the event date at which the location becomes visible. */
-const LOCATION_REVEAL_DAYS = 3;
+const DEFAULT_LOCATION_REVEAL_DAYS = 3;
 
-function shouldShowLocation(eventDate: string): boolean {
+function shouldShowLocation(eventDate: string, revealDays: number): boolean {
   const event = new Date(eventDate + 'T00:00:00');
   const now = new Date();
   const diff = event.getTime() - now.getTime();
   const days = diff / (1000 * 60 * 60 * 24);
-  return days <= LOCATION_REVEAL_DAYS;
+  return days <= revealDays;
 }
 
 export const Listen: React.FC = () => {
@@ -76,8 +75,9 @@ export const Listen: React.FC = () => {
 
   const isLive = event.status === 'live';
   const isUpcoming = event.status === 'upcoming';
+  const revealDays = event.venueRevealDaysBefore ?? DEFAULT_LOCATION_REVEAL_DAYS;
   const showLocation =
-    !!event.location && (isLive || (isUpcoming && shouldShowLocation(event.date)));
+    !!event.location && (isLive || (isUpcoming && shouldShowLocation(event.date, revealDays)));
 
   return (
     <main className="flex flex-col gap-4 p-4">
@@ -118,7 +118,7 @@ export const Listen: React.FC = () => {
           )}
           {isUpcoming && event.location && !showLocation && (
             <span className="text-zine-burntOrange/60 text-sm italic mt-1">
-              local revelado {LOCATION_REVEAL_DAYS} dias antes
+              local revelado {revealDays} dias antes
             </span>
           )}
         </div>
