@@ -8,6 +8,12 @@ export const stickerAssets = [
   'lightning.svg',
   'exclamation.svg',
   'spiral.svg',
+  'ladybug.svg',
+  'music-note.svg',
+  'bee.svg',
+  'lollipop.svg',
+  'candy.svg',
+  'bear.svg',
 ] as const;
 
 export type StickerAsset = typeof stickerAssets[number];

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" aria-hidden="true">
+  <line x1="20" y1="70" x2="32" y2="60" stroke="#222" stroke-width="4" stroke-linecap="round" />
+  <line x1="16" y1="82" x2="28" y2="78" stroke="#222" stroke-width="4" stroke-linecap="round" />
+  <line x1="22" y1="96" x2="32" y2="92" stroke="#222" stroke-width="4" stroke-linecap="round" />
+  <line x1="100" y1="70" x2="88" y2="60" stroke="#222" stroke-width="4" stroke-linecap="round" />
+  <line x1="104" y1="82" x2="92" y2="78" stroke="#222" stroke-width="4" stroke-linecap="round" />
+  <line x1="98" y1="96" x2="88" y2="92" stroke="#222" stroke-width="4" stroke-linecap="round" />
+  <ellipse cx="60" cy="68" rx="40" ry="34" fill="#D97642" stroke="#222" stroke-width="5" />
+  <path d="M38 46 C 40 30, 80 30, 82 46 C 80 54, 40 54, 38 46 Z" fill="#222" stroke="#222" stroke-width="5" stroke-linejoin="round" />
+  <line x1="60" y1="48" x2="60" y2="100" stroke="#222" stroke-width="5" />
+  <circle cx="45" cy="62" r="6" fill="#222" />
+  <circle cx="75" cy="62" r="6" fill="#222" />
+  <circle cx="42" cy="84" r="5" fill="#222" />
+  <circle cx="78" cy="84" r="5" fill="#222" />
+  <path d="M50 34 Q 46 22 42 16" stroke="#222" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M70 34 Q 74 22 78 16" stroke="#222" stroke-width="4" stroke-linecap="round" fill="none" />
+  <circle cx="41" cy="14" r="3" fill="#222" />
+  <circle cx="79" cy="14" r="3" fill="#222" />
+</svg>
