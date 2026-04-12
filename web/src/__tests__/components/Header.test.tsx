@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
+import { GuestUpsellProvider } from '@/contexts/GuestUpsellContext';
 import { useSessionStore } from '@/store/sessionStore';
 
 // Header calls window.matchMedia to detect dark mode preference
@@ -23,6 +24,9 @@ vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/components/auth/LoginModal', () => ({
   default: () => null,
 }));
+vi.mock('@/components/rsvp/GuestUpsellModal', () => ({
+  default: () => null,
+}));
 vi.mock('@/components/common/UserAvatar', () => ({
   default: ({ name }: { name: string }) => <span data-testid="user-avatar">{name}</span>,
 }));
@@ -34,7 +38,9 @@ const mockUseAuth = useAuth as unknown as ReturnType<typeof vi.fn>;
 function renderHeader() {
   return render(
     <MemoryRouter>
-      <Header />
+      <GuestUpsellProvider>
+        <Header />
+      </GuestUpsellProvider>
     </MemoryRouter>,
   );
 }
