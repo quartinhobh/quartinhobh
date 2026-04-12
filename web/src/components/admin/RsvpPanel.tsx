@@ -66,7 +66,6 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -198,9 +197,102 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
     }
   }
 
-  function handleExportPdf(): void {
-    setShowPdfPreview(true);
-    setShowExportMenu(false);
+  async function generatePdf(useTestData: boolean = false): Promise<void> {
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const eventsRes = await fetchEvents();
+      const event = (eventsRes ?? []).find((e) => e.id === eventId);
+
+      if (!event) {
+        alert('Evento não encontrado');
+        return;
+      }
+
+      let confirmed = entries.filter((e) => e.status === 'confirmed');
+
+      // Dados de teste: 30 pessoas
+      if (useTestData) {
+        const testNames = [
+          'Arthur Abeilice', 'Roberto Silva', 'Teste User', 'João Santos', 'Maria Oliveira',
+          'Lucas Costa', 'Ana Paula', 'Felipe Martins', 'Beatriz Lima', 'Carlos Dias',
+          'Daniela Rocha', 'Eduardo Alves', 'Fernanda Gomes', 'Gabriel Santos', 'Helena Ferreira',
+          'Igor Mendes', 'Juliana Ribeiro', 'Kevin Silva', 'Larissa Costa', 'Mateus Oliveira',
+          'Natalia Santos', 'Otavio Lima', 'Patricia Dias', 'Quentin Martins', 'Raquel Silva',
+          'Samuel Costa', 'Tatiana Alves', 'Ulisses Gomes', 'Vanessa Ferreira', 'Wagner Mendes'
+        ];
+        const plusOneNames = ['Sofia Mendes', 'Camila Rocha', 'Isabela Costa', 'Mariana Silva', 'Fernanda Dias', 'Beatrice Santos'];
+        confirmed = testNames.map((name, idx) => ({
+          entryKey: `test-${idx}`,
+          displayName: name,
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@test.com`,
+          status: 'confirmed' as const,
+          plusOne: idx % 5 === 0,
+          plusOneName: idx % 5 === 0 ? plusOneNames[idx % plusOneNames.length] : undefined,
+          createdAt: new Date().toISOString(),
+        })) as AdminRsvpEntry[];
+      }
+
+      // Calcula total de lugares (contando +1)
+      const totalLugares = confirmed.reduce((sum, entry) => sum + (entry.plusOne ? 2 : 1), 0);
+
+      // Cria elemento HTML com dados
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="font-family: 'Bitter', Georgia, serif; padding: 16px 20px;">
+          <h1 style="font-family: 'Alfa Slab One', serif; font-size: 24px; margin: 0 0 2px 0; color: #333; text-align: center;">
+            ${event.title}
+          </h1>
+          <p style="font-size: 11px; color: #666; margin: 0 0 12px 0; text-align: center; border-bottom: 1px solid #999; padding-bottom: 6px;">
+            ${event.date} · ${event.location ?? 'Local não informado'} | Confirmados: ${confirmed.length} pessoas | Lugares: ${totalLugares}
+          </p>
+          <div>
+            ${confirmed.map((entry, idx) => `
+              <div>
+                <div style="margin-bottom: 2px; padding-bottom: 2px; border-bottom: 1px solid #ddd; display: flex; gap: 20px; align-items: baseline;">
+                  <div style="min-width: 20px; font-size: 11px; color: #999; flex-shrink: 0;">
+                    ${idx + 1}.
+                  </div>
+                  <div style="font-size: 11px; color: #333; font-weight: 500; flex: 1;">
+                    ${entry.displayName}
+                  </div>
+                  <div style="color: #666; font-size: 10px; flex: 1.5; text-align: right;">
+                    ${entry.email}
+                  </div>
+                </div>
+                ${entry.plusOne ? `
+                  <div style="margin-bottom: 6px; padding-left: 24px; padding-bottom: 4px; border-bottom: 1px solid #eee; display: flex; gap: 20px; align-items: baseline; opacity: 0.8;">
+                    <div style="font-size: 11px; color: #999; flex-shrink: 0;">
+                      ⤷
+                    </div>
+                    <div style="font-size: 10px; color: #555; font-style: italic; flex: 1;">
+                      ${entry.plusOneName || 'acompanhante'}
+                    </div>
+                    <div style="color: #999; font-size: 10px; flex: 1.5; text-align: right;">
+                      —
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <div style="text-align: center; font-size: 9px; color: #999; border-top: 1px solid #999; padding-top: 6px; margin-top: 16px; page-break-before: avoid;">
+            ${new Date().toLocaleDateString('pt-BR')} · Quartinho
+          </div>
+        </div>
+      `;
+
+      const options = {
+        margin: 10,
+        filename: `Presença - ${event.title}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+      };
+
+      html2pdf().set(options).from(element).save();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao gerar PDF');
+    }
   }
 
   async function handleImportFile(file: File): Promise<void> {
@@ -437,6 +529,12 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
           )}
         </div>
         <div className="flex gap-2 relative">
+          <Button
+            onClick={() => void generatePdf()}
+            className="bg-zine-mint hover:bg-zine-mint/80 text-zine-cream border-2 border-zine-mint"
+          >
+            📥 IMPRIMIR confirmados
+          </Button>
           <Button onClick={() => setShowImportModal(true)}>Importar</Button>
           <div className="relative">
             <Button onClick={() => setShowExportMenu(!showExportMenu)}>Exportar ▾</Button>
@@ -463,20 +561,11 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
                 >
                   JSON
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleExportPdf()}
-                  className="block w-full text-left px-3 py-2 font-body text-sm text-zine-burntOrange hover:bg-zine-burntYellow/20 border-t border-zine-burntOrange/20"
-                >
-                  PDF (confirmados)
-                </button>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {showPdfPreview && <PdfPreview eventId={eventId} idToken={idToken} onClose={() => setShowPdfPreview(false)} />}
 
       {capacity !== null && (
         <div className="w-full h-3 bg-zine-cream dark:bg-zine-surface-dark border-2 border-zine-burntOrange mb-4 overflow-hidden">
@@ -838,107 +927,6 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
         </div>
       )}
     </ZineFrame>
-  );
-};
-
-interface PdfPreviewProps {
-  eventId: string;
-  idToken: string;
-  onClose: () => void;
-}
-
-const PdfPreview: React.FC<PdfPreviewProps> = ({ eventId, idToken, onClose }) => {
-  const [entries, setEntries] = useState<AdminRsvpEntry[]>([]);
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function load(): Promise<void> {
-      try {
-        const [entriesRes, eventsRes] = await Promise.all([
-          fetchAdminRsvpList(eventId, idToken),
-          fetchEvents(),
-        ]);
-        setEntries(entriesRes.entries.filter((e) => e.status === 'confirmed'));
-        const evt = (eventsRes ?? []).find((e) => e.id === eventId);
-        setEvent(evt ?? null);
-      } catch {
-        setEntries([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    void load();
-  }, [eventId, idToken]);
-
-  const confirmed = entries.filter((e) => e.status === 'confirmed');
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 print:hidden">
-        <div className="bg-zine-cream dark:bg-zine-surface-dark border-4 border-zine-burntOrange p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <p className="font-body text-zine-burntOrange dark:text-zine-cream">carregando…</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 print:fixed print:inset-0 print:bg-white print:p-0 print:flex print:items-start print:justify-start">
-      <div className="bg-zine-cream dark:bg-zine-surface-dark border-4 border-zine-burntOrange p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto print:border-0 print:bg-white print:text-black print:max-w-full print:max-h-none print:p-0">
-        {/* Print-friendly content */}
-        <div>
-          {/* Header */}
-          <div className="mb-6 pb-4 border-b-2 border-zine-burntOrange print:border-gray-300">
-            <h1 className="font-display text-2xl text-zine-burntOrange print:text-black mb-1">
-              {event?.title}
-            </h1>
-            <div className="font-body text-sm text-zine-burntOrange/70 print:text-gray-600">
-              {event?.date} · {event?.location ?? 'Local não informado'}
-            </div>
-            <div className="font-body text-sm text-zine-burntOrange/70 print:text-gray-600 mt-2">
-              Confirmados: {confirmed.length}
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="space-y-2">
-            {confirmed.map((entry) => (
-              <div
-                key={entry.entryKey}
-                className="border-b border-zine-burntOrange/20 print:border-gray-200 pb-2 print:pb-1"
-              >
-                <div className="font-body text-sm text-zine-burntOrange print:text-black">
-                  <span className="font-bold">{entry.displayName}</span>
-                  {entry.plusOne && <span className="text-xs opacity-70"> (+1)</span>}
-                </div>
-                <div className="font-body text-xs text-zine-burntOrange/70 print:text-gray-600">
-                  {entry.email}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Controls (hidden when printing) */}
-        <div className="flex gap-2 justify-end mt-4 print:hidden">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="font-body px-3 py-2 border-2 border-zine-burntOrange text-zine-burntOrange hover:bg-zine-burntOrange/10"
-          >
-            imprimir/PDF
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="font-body px-3 py-2 border-2 border-zine-burntOrange text-zine-burntOrange hover:bg-zine-burntOrange/10"
-          >
-            fechar
-          </button>
-        </div>
-      </div>
-    </div>
   );
 };
 

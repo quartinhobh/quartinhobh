@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { submitRsvpGuest } from '@/services/api';
 import Modal from '@/components/common/Modal';
-import GuestUpsellModal from './GuestUpsellModal';
+import { useGuestUpsell } from '@/contexts/GuestUpsellContext';
 
 export interface RsvpFormProps {
   eventId: string;
@@ -43,7 +43,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessState | null>(null);
-  const [showUpsell, setShowUpsell] = useState(false);
+  const { openModal } = useGuestUpsell();
 
   function handleClose() {
     setDisplayName('');
@@ -52,7 +52,6 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
     setPlusOneName('');
     setError(null);
     setSuccess(null);
-    setShowUpsell(false);
     onClose();
   }
 
@@ -73,7 +72,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
         return;
       }
       setSuccess({ status, entryKey: res.entryKey });
-      setShowUpsell(true);
+      openModal({ email: email.trim(), displayName: displayName.trim() });
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown';
@@ -96,22 +95,12 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
       </div>
     );
 
-    return (
-      <>
-        {useModal ? (
-          <Modal isOpen={isOpen} onClose={handleClose}>
-            <div className="-m-4 -mb-4">{successContent}</div>
-          </Modal>
-        ) : (
-          successContent
-        )}
-        <GuestUpsellModal
-          isOpen={showUpsell}
-          onClose={() => setShowUpsell(false)}
-          email={email.trim()}
-          displayName={displayName.trim()}
-        />
-      </>
+    return useModal ? (
+      <Modal isOpen={isOpen} onClose={handleClose}>
+        <div className="-m-4 -mb-4">{successContent}</div>
+      </Modal>
+    ) : (
+      successContent
     );
   }
 
@@ -173,25 +162,15 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
     </form>
   );
 
-  return (
-    <>
-      {useModal ? (
-        <Modal isOpen={isOpen} onClose={handleClose} title="confirma sua presença">
-          {formContent}
-        </Modal>
-      ) : isOpen ? (
-        <div className="flex flex-col gap-3 bg-zine-cream dark:bg-zine-surface-dark border-4 border-zine-burntYellow p-4">
-          {formContent}
-        </div>
-      ) : null}
-      <GuestUpsellModal
-        isOpen={showUpsell}
-        onClose={() => setShowUpsell(false)}
-        email={email.trim()}
-        displayName={displayName.trim()}
-      />
-    </>
-  );
+  return useModal ? (
+    <Modal isOpen={isOpen} onClose={handleClose} title="confirma sua presença">
+      {formContent}
+    </Modal>
+  ) : isOpen ? (
+    <div className="flex flex-col gap-3 bg-zine-cream dark:bg-zine-surface-dark border-4 border-zine-burntYellow p-4">
+      {formContent}
+    </div>
+  ) : null;
 };
 
 export default RsvpForm;

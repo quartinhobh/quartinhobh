@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionStore } from '@/store/sessionStore';
 import LoginModal from '@/components/auth/LoginModal';
+import GuestUpsellModal from '@/components/rsvp/GuestUpsellModal';
 import UserAvatar from '@/components/common/UserAvatar';
+import { useGuestUpsell } from '@/contexts/GuestUpsellContext';
 
 const THEME_KEY = 'quartinho:theme';
 
@@ -21,6 +23,7 @@ export const Header: React.FC = () => {
   const isAdminOrMod = role === 'admin' || role === 'moderator';
   const [loginOpen, setLoginOpen] = useState(false);
   const [dark, setDark] = useState(getInitialDark);
+  const { modalData, closeModal } = useGuestUpsell();
 
   const applyTheme = useCallback((isDark: boolean) => {
     document.documentElement.classList.toggle('dark', isDark);
@@ -104,6 +107,14 @@ export const Header: React.FC = () => {
         </div>
       </header>
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+      {modalData && (
+        <GuestUpsellModal
+          isOpen={!!modalData}
+          onClose={closeModal}
+          email={modalData.email}
+          displayName={modalData.displayName}
+        />
+      )}
     </>
   );
 };
