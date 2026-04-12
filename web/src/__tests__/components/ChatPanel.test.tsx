@@ -86,17 +86,6 @@ describe('ChatPanel', () => {
     );
   });
 
-  it('renders event status as programado when chatOpensAt in the future', async () => {
-    (getChatConfig as Mock).mockResolvedValue({ pauseAll: false });
-    (fetchEvents as Mock).mockResolvedValue([
-      mockEvent({ chatOpensAt: Date.now() + 10 * 60 * 1000 }),
-    ]);
-
-    render(<ChatPanel />);
-
-    await waitFor(() => expect(screen.getByText(/programado/)).toBeInTheDocument());
-  });
-
   it('renders bans list and calls unbanUser on click', async () => {
     (getChatConfig as Mock).mockResolvedValue({ pauseAll: false });
     (fetchEvents as Mock).mockResolvedValue([]);

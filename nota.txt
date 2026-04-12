@@ -1,0 +1,51 @@
+⏺ Passou. Resumo:                    
+                                                                                                                                                                                                                      
+  Criado:                                                                                                                                                                                                             
+  - web/src/hooks/useMusicBrainzSearch.ts — hook com query/results/searching/reset, debounce 400ms, cancelamento correto (flag + clearTimeout), minLength configurável.
+  - web/src/components/common/MbResultsList.tsx — lista presentacional com duas variants: default (EventForm — bordas grossas, capas 40px) e compact (Profile — compacta, capas 32px).                                
+                                                                  
+  Refatorado:                                                                                                                                                                                                         
+  - EventForm.tsx: removidos useCallback/useEffect/useRef de debounce, state local de searchResults/searching, e todo o JSX da lista. ~30 linhas → 8.
+  - Profile.tsx: removido useEffect de debounce, state local, e JSX da lista. Filtro "excluir já favoritados" fica no callsite (passado via results={...filter}), que é a lógica específica do Profile.               
+                                                                                                                                                                                                       
+  Testes: EventForm passa com o mock existente (searchMusicBrainz: vi.fn().mockResolvedValue([]) já cobre o hook).                                                                                                    
+                                                                                                                                                                                                                      
+  Para o modo explorar futuro (Letterboxd/Last.fm style): é só importar useMusicBrainzSearch + MbResultsList e compor. O hook é agnóstico do contexto, e se precisar de uma variant nova (ex.: grid ao invés de       
+  lista), basta adicionar no switch do componente ou criar um irmão que usa o mesmo hook.     
+
+/btw como automatizar print das páginas ?                                                                                                                                                                           
+                                            
+    Pra automatizar prints (screenshots) das páginas do site, três caminhos práticos:                                                                                                                                 
+                                               
+    1. Playwright (mais robusto, recomendado)                                                                                                                                                                         
+    bun add -D @playwright/test
+    bunx playwright install                                                                                                                                                                                           
+    import { test } from '@playwright/test';                      
+    const pages = ['/', '/listen', '/u/arthur', '/lojinha'];                                                                                                                                                          
+    for (const path of pages) {                
+      test(`screenshot ${path}`, async ({ page }) => {
+        await page.goto(`http://localhost:5173${path}`);
+        await page.waitForLoadState('networkidle');
+        await page.screenshot({ path: `screenshots${path.replace(/\//g, '_')}.png`, fullPage: true });
+      });
+    }
+    Roda em CI, vários viewports (devices['iPhone 13']), modo dark, etc.
+
+    2. Puppeteer — mesma ideia, API parecida, só Chromium.
+
+    3. browser-use (já mencionado no seu CLAUDE.md) — Python, bom se quiser que um agente navegue + tire print de fluxos complexos com decisões.
+
+    Pra esse projeto especificamente, sugiro Playwright porque:
+    - Já roda headless no GitHub Actions (cabe no preflight existente)
+    - Suporta prefers-reduced-motion (importante por causa dos stickers e animações zine)
+    - Captura múltiplos viewports numa rodada só (mobile/desktop)
+    - Gera diff visual se você usar toHaveScreenshot() — vira regression test grátis
+
+    Padrão típico de organização:
+    - web/visual-tests/pages.spec.ts — lista de rotas + viewports
+    - Output em web/visual-tests/__screenshots__/
+    - Step novo no .github/workflows/deploy.yml rodando antes do deploy: se algum diff > threshold, falha o build
+
+    Quer que eu monte isso? Posso fazer no estilo do preflight que você já tem (lista de rotas públicas, sem auth) e plugar como step opcional no workflow.
+
+  ↑/↓ to scroll · Space, Enter, or Escape to dismiss

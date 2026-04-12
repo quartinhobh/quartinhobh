@@ -3,6 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('@/hooks/useIdToken', () => ({ useIdToken: () => 'fake-token' }));
+vi.mock('@/services/api', async () => {
+  const actual = await vi.importActual('@/services/api');
+  return {
+    ...actual,
+    fetchEvents: vi.fn(async () => []),
+    updateEvent: vi.fn(async () => ({})),
+  };
+});
 
 import { ModerationPanel } from '@/components/admin/ModerationPanel';
 

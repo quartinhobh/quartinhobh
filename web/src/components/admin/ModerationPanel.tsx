@@ -5,7 +5,8 @@ import Button from '@/components/common/Button';
 import HelperBox from '@/components/admin/HelperBox';
 import { useModeration } from '@/hooks/useModeration';
 import { useIdToken } from '@/hooks/useIdToken';
-import { fetchModerationUserProfile } from '@/services/api';
+import { fetchModerationUserProfile, fetchEvents, updateEvent } from '@/services/api';
+import type { Event } from '@/types';
 
 export interface ModerationPanelProps {
   idToken?: string | null;
@@ -53,9 +54,114 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = () => {
   ];
   const getName = useUserNames(idToken, allUserIds);
 
+  // ── Chat config ──────────────────────────────────────────────────
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [chatClosesAt, setChatClosesAt] = useState<string>('');
+  const [chatSaving, setChatSaving] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetchEvents().then((list) => {
+      const arr = list ?? [];
+      setEvents(arr);
+      if (arr.length > 0 && !selectedEventId) {
+        setSelectedEventId(arr[0]!.id);
+        setChatEnabled(arr[0]!.chatEnabled ?? true);
+        setChatClosesAt(arr[0]!.chatClosesAt ? new Date(arr[0]!.chatClosesAt).toISOString().slice(0, 16) : '');
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleSelectEvent(eventId: string) {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
+    setSelectedEventId(eventId);
+    setChatEnabled(event.chatEnabled ?? true);
+    setChatClosesAt(event.chatClosesAt ? new Date(event.chatClosesAt).toISOString().slice(0, 16) : '');
+    setChatError(null);
+  }
+
+  async function handleSaveChat() {
+    if (!idToken || !selectedEventId) return;
+    setChatSaving(true);
+    setChatError(null);
+    try {
+      await updateEvent(selectedEventId, {
+        chatEnabled,
+        chatClosesAt: chatClosesAt ? new Date(chatClosesAt).getTime() : null,
+      }, idToken);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : 'Erro ao salvar');
+    } finally {
+      setChatSaving(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <HelperBox>Veja banimentos ativos e o histórico de moderação. Usuários banidos não conseguem usar o chat nem confirmar presença. Clique em 'desbanir' pra liberar o acesso novamente.</HelperBox>
+
+      {/* Chat config */}
+      <ZineFrame bg="cream">
+        <h2 className="font-display text-2xl text-zine-burntOrange mb-3">
+          Configuração do chat
+        </h2>
+        <div className="flex flex-col gap-3">
+          <label className="font-body text-zine-burntOrange flex flex-col gap-1">
+            <span>Evento</span>
+            <select
+              aria-label="chat-event-select"
+              value={selectedEventId}
+              onChange={(e) => handleSelectEvent(e.target.value)}
+              className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2"
+            >
+              {events.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="font-body text-zine-burntOrange flex items-center gap-2">
+            <input
+              type="checkbox"
+              aria-label="chat-enabled-moderation"
+              checked={chatEnabled}
+              onChange={(e) => setChatEnabled(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span>Ativar chat</span>
+          </label>
+
+          {chatEnabled && (
+            <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
+              <span>Fecha em (opcional)</span>
+              <input
+                type="datetime-local"
+                aria-label="chat-closes-at-moderation"
+                value={chatClosesAt}
+                onChange={(e) => setChatClosesAt(e.target.value)}
+                className="border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream font-body p-2 focus:outline-none focus:border-zine-burntOrange"
+              />
+            </label>
+          )}
+
+          {chatError && (
+            <p role="alert" className="font-body text-sm text-zine-burntOrange">
+              erro: {chatError}
+            </p>
+          )}
+
+          <Button onClick={() => void handleSaveChat()} disabled={chatSaving}>
+            {chatSaving ? 'a guardar…' : 'guardar config'}
+          </Button>
+        </div>
+      </ZineFrame>
+
       <ZineFrame bg="cream">
         <h2 className="font-display text-2xl text-zine-burntOrange mb-3">
           Banimentos ativos
