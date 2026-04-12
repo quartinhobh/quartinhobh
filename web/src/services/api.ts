@@ -1230,6 +1230,43 @@ export async function exportRsvpCsv(
   return res.text();
 }
 
+export async function exportRsvpJson(
+  entries: AdminRsvpEntry[],
+): Promise<string> {
+  // Frontend-only export to JSON
+  const data = entries.map((e) => ({
+    nome: e.displayName,
+    email: e.email,
+    status: e.status,
+    origem: e.authMode === 'firebase' ? 'conta' : 'convidado',
+    mais_um: e.plusOne ? 'sim' : 'não',
+    acompanhante: e.plusOneName ?? '',
+    data_rsvp: new Date(e.createdAt).toLocaleDateString('pt-BR'),
+  }));
+  return JSON.stringify(data, null, 2);
+}
+
+export async function importRsvp(
+  eventId: string,
+  entries: Array<{ displayName: string; email: string; plusOne?: boolean; plusOneName?: string }>,
+  idToken: string,
+): Promise<{ imported: number; skipped: number }> {
+  const res = await fetch(
+    `${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/admin/import`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ entries }),
+    },
+  );
+  if (!res.ok) throw new Error(`POST rsvp/admin/import failed: ${res.status}`);
+  const body = (await res.json()) as { imported: number; skipped: number };
+  return body;
+}
+
 export async function fetchStickerConfig(): Promise<StickerConfig> {
   const res = await fetch(`${API_URL}/sticker-config`);
   if (!res.ok) throw new Error(`GET /sticker-config failed: ${res.status}`);

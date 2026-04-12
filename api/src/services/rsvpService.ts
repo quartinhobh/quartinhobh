@@ -599,3 +599,76 @@ export function exportCsv(entries: AdminRsvpEntry[]): string {
   });
   return [header, ...rows].join('\n');
 }
+
+/**
+ * Bulk import RSVPs from CSV/Excel import.
+ * Each entry is created as a guest RSVP with confirmed status.
+ * Duplicate emails (already in the event) are skipped.
+ */
+export async function bulkImportRsvp(
+  eventId: string,
+  entries: Array<{ displayName: string; email: string; plusOne?: boolean; plusOneName?: string | null }>,
+): Promise<{ imported: number; skipped: number }> {
+  const snap = await adminDb.collection('rsvps').doc(eventId).get();
+  const doc = snap.exists ? (snap.data() as RsvpDoc) : { entries: {} };
+
+  let imported = 0;
+  let skipped = 0;
+
+  // Check which emails already exist
+  const existingEmails = new Set<string>();
+  Object.values(doc.entries).forEach((entry) => {
+    if (entry.email) {
+      existingEmails.add(entry.email.toLowerCase().trim());
+    }
+  });
+
+  const now = Date.now();
+  const newEntries: Record<string, RsvpEntry> = {};
+
+  for (const input of entries) {
+    const emailKey = input.email.toLowerCase().trim();
+
+    // Skip if email already exists
+    if (existingEmails.has(emailKey)) {
+      skipped += 1;
+      continue;
+    }
+
+    // Generate a unique guest entry key using email hash
+    const emailHash = createHash('sha256')
+      .update(emailKey)
+      .digest('hex')
+      .slice(0, 16);
+    const entryKey = `guest:${emailHash}`;
+
+    // Skip if this guest entry key already exists (shouldn't happen with hash, but be safe)
+    if (doc.entries[entryKey] || newEntries[entryKey]) {
+      skipped += 1;
+      continue;
+    }
+
+    newEntries[entryKey] = {
+      displayName: input.displayName,
+      email: input.email,
+      status: 'confirmed',
+      authMode: 'guest',
+      createdAt: now,
+      updatedAt: now,
+      plusOne: !!input.plusOne,
+      plusOneName: input.plusOneName ?? null,
+    };
+
+    existingEmails.add(emailKey);
+    imported += 1;
+  }
+
+  // Write all new entries in a single batch
+  if (imported > 0) {
+    await adminDb.collection('rsvps').doc(eventId).update({
+      entries: { ...doc.entries, ...newEntries },
+    });
+  }
+
+  return { imported, skipped };
+}

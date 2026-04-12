@@ -23,6 +23,7 @@ import {
   moveToWaitlist,
   exportCsv,
   buildEntryKey,
+  bulkImportRsvp,
   type SubmitRsvpInput,
 } from '../services/rsvpService';
 import { buildRsvpEmail } from '../services/emailTemplateService';
@@ -368,6 +369,42 @@ rsvpRouter.put(
       void sendRsvpEmail(emailKey, eventId, targetEntryKey, vars);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'approve_failed';
+      res.status(500).json({ error: msg });
+    }
+  },
+);
+
+// POST /events/:eventId/rsvp/admin/import — bulk import RSVPs from CSV/Excel
+rsvpRouter.post(
+  '/admin/import',
+  writeLimiter,
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const body = (req.body ?? {}) as {
+        entries?: Array<{ displayName?: string; email?: string; plusOne?: boolean; plusOneName?: string }>;
+      };
+      const entries = body.entries ?? [];
+      if (!Array.isArray(entries)) {
+        res.status(400).json({ error: 'invalid_payload' });
+        return;
+      }
+
+      // Validate and normalize entries
+      const normalized = entries
+        .filter((e) => e.email && e.displayName)
+        .map((e) => ({
+          displayName: (e.displayName ?? '').toString().slice(0, 80),
+          email: (e.email ?? '').toString().toLowerCase().trim(),
+          plusOne: !!e.plusOne,
+          plusOneName: e.plusOneName ? (e.plusOneName ?? '').toString().slice(0, 80) : null,
+        }));
+
+      const result = await bulkImportRsvp(req.params.eventId!, normalized);
+      res.status(200).json({ imported: result.imported, skipped: result.skipped });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'import_failed';
       res.status(500).json({ error: msg });
     }
   },

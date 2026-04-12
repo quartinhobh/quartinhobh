@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { utils, writeFile } from 'xlsx';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import HelperBox from '@/components/admin/HelperBox';
@@ -6,6 +7,8 @@ import {
   fetchAdminRsvpList,
   approveRejectRsvp,
   exportRsvpCsv,
+  exportRsvpJson,
+  importRsvp,
   adminCancelRsvp,
   moveRsvpToWaitlist,
 } from '@/services/api';
@@ -53,6 +56,11 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<Array<{ displayName: string; email: string }> | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
 
   async function load(): Promise<void> {
     setLoading(true);
@@ -112,7 +120,7 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
     }
   }
 
-  async function handleExport(): Promise<void> {
+  async function handleExportCsv(): Promise<void> {
     try {
       const csv = await exportRsvpCsv(eventId, idToken);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -122,9 +130,150 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
       a.download = `rsvp-${eventId}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      setShowExportMenu(false);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Erro ao exportar');
     }
+  }
+
+  async function handleExportExcel(): Promise<void> {
+    try {
+      const data = visible.map((e) => ({
+        nome: e.displayName,
+        email: e.email,
+        status: e.status,
+        origem: e.authMode === 'firebase' ? 'conta' : 'convidado',
+        mais_um: e.plusOne ? 'sim' : 'não',
+        acompanhante: e.plusOneName ?? '',
+        data_rsvp: new Date(e.createdAt).toLocaleDateString('pt-BR'),
+      }));
+      const ws = utils.json_to_sheet(data);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, 'RSVPs');
+      writeFile(wb, `rsvp-${eventId}.xlsx`);
+      setShowExportMenu(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao exportar Excel');
+    }
+  }
+
+  async function handleExportJson(): Promise<void> {
+    try {
+      const json = await exportRsvpJson(visible);
+      const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rsvp-${eventId}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setShowExportMenu(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao exportar JSON');
+    }
+  }
+
+  async function handleImportFile(file: File): Promise<void> {
+    try {
+      const text = await file.text();
+      let parsed: Array<{ displayName?: string; nome?: string; email: string }> = [];
+
+      if (file.name.endsWith('.xlsx') || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        const data = await file.arrayBuffer();
+        const workbook = utils.read(data);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]!];
+        if (!sheet) throw new Error('Sheet not found');
+        parsed = utils.sheet_to_json(sheet);
+      } else {
+        // CSV: simple RFC-4180 parser (handles quoted fields)
+        const lines = text.trim().split('\n');
+        const headers = parseCSVLine(lines[0]!);
+        parsed = lines.slice(1).map((line) => {
+          const cols = parseCSVLine(line);
+          return Object.fromEntries(headers.map((h, i) => [h.toLowerCase().trim(), cols[i]?.trim() ?? '']));
+        });
+      }
+
+      // Normalize to displayName + email
+      const preview = parsed
+        .filter((r) => ((r.email ?? r.EMAIL ?? r.Email) || '') && (((r.nome ?? r.displayName ?? r.NAME ?? r.Nome) || '')))
+        .slice(0, 5)
+        .map((r) => ({
+          displayName: ((r.displayName ?? r.nome ?? r.NAME ?? r.Nome) || '').toString(),
+          email: ((r.email ?? r.EMAIL ?? r.Email) || '').toString(),
+        }));
+
+      setImportFile(file);
+      setImportPreview(preview);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao ler arquivo');
+    }
+  }
+
+  async function handleConfirmImport(): Promise<void> {
+    if (!importFile || !importPreview) return;
+    setImportBusy(true);
+    try {
+      const text = await importFile.text();
+      let parsed: Array<{ displayName?: string; nome?: string; email: string }> = [];
+
+      if (importFile.name.endsWith('.xlsx')) {
+        const data = await importFile.arrayBuffer();
+        const workbook = utils.read(data);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]!];
+        if (!sheet) throw new Error('Sheet not found');
+        parsed = utils.sheet_to_json(sheet);
+      } else {
+        const lines = text.trim().split('\n');
+        const headers = parseCSVLine(lines[0]!);
+        parsed = lines.slice(1).map((line) => {
+          const cols = parseCSVLine(line);
+          return Object.fromEntries(headers.map((h, i) => [h.toLowerCase().trim(), cols[i]?.trim() ?? '']));
+        });
+      }
+
+      const entries = parsed
+        .filter((r) => ((r.email ?? r.EMAIL ?? r.Email) || '') && (((r.nome ?? r.displayName ?? r.NAME ?? r.Nome) || '')))
+        .map((r) => ({
+          displayName: ((r.displayName ?? r.nome ?? r.NAME ?? r.Nome) || '').toString(),
+          email: ((r.email ?? r.EMAIL ?? r.Email) || '').toString(),
+        }));
+
+      const result = await importRsvp(eventId, entries, idToken);
+      alert(`Importado: ${result.imported} · Duplicado/Ignorado: ${result.skipped}`);
+      setShowImportModal(false);
+      setImportFile(null);
+      setImportPreview(null);
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao importar');
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  function parseCSVLine(line: string): string[] {
+    const fields: string[] = [];
+    let i = 0;
+    while (i < line.length) {
+      if (line[i] === '"') {
+        let val = '';
+        i++; // skip opening quote
+        while (i < line.length) {
+          if (line[i] === '"' && line[i + 1] === '"') { val += '"'; i += 2; }
+          else if (line[i] === '"') { i++; break; }
+          else { val += line[i++]; }
+        }
+        if (line[i] === ',') i++;
+        fields.push(val);
+      } else {
+        const end = line.indexOf(',', i);
+        if (end === -1) { fields.push(line.slice(i)); break; }
+        fields.push(line.slice(i, end));
+        i = end + 1;
+      }
+    }
+    return fields;
   }
 
   // Effective confirmed headcount including +1s.
@@ -248,7 +397,37 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
             </p>
           )}
         </div>
-        <Button onClick={() => void handleExport()}>Exportar CSV</Button>
+        <div className="flex gap-2 relative">
+          <Button onClick={() => setShowImportModal(true)}>Importar</Button>
+          <div className="relative">
+            <Button onClick={() => setShowExportMenu(!showExportMenu)}>Exportar ▾</Button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-zine-cream border-2 border-zine-burntOrange shadow-lg z-50">
+                <button
+                  type="button"
+                  onClick={() => void handleExportCsv()}
+                  className="block w-full text-left px-3 py-2 font-body text-sm text-zine-burntOrange hover:bg-zine-burntYellow/20"
+                >
+                  CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleExportExcel()}
+                  className="block w-full text-left px-3 py-2 font-body text-sm text-zine-burntOrange hover:bg-zine-burntYellow/20 border-t border-zine-burntOrange/20"
+                >
+                  Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleExportJson()}
+                  className="block w-full text-left px-3 py-2 font-body text-sm text-zine-burntOrange hover:bg-zine-burntYellow/20 border-t border-zine-burntOrange/20"
+                >
+                  JSON
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {capacity !== null && (
@@ -295,123 +474,236 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
       )}
 
       {!loading && !error && visible.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full font-body text-sm text-zine-burntOrange border-collapse">
-            <thead>
-              <tr className="border-b-2 border-zine-burntYellow">
-                <th className="py-2 pr-3 w-6">
-                  <input
-                    type="checkbox"
-                    aria-label="selecionar todos"
-                    checked={allVisibleSelected}
-                    onChange={toggleAllVisible}
-                  />
-                </th>
-                <th className="text-left py-2 pr-3 cursor-pointer select-none" onClick={toggleSortName}>
-                  Nome {sortKey === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                </th>
-                <th className="text-left py-2 pr-3">Email</th>
-                <th className="text-left py-2 pr-3">Origem</th>
-                <th className="text-left py-2 pr-3">Status</th>
-                <th className="text-left py-2 pr-3">+1</th>
-                <th className="text-left py-2 pr-3">Data</th>
-                <th className="py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((entry) => (
-                <tr
-                  key={entry.entryKey}
-                  className="border-b border-zine-burntOrange/20 hover:bg-zine-burntYellow/10"
-                >
-                  <td className="py-2 pr-3">
+        <>
+          {/* Desktop table (md+) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full font-body text-sm text-zine-burntOrange border-collapse">
+              <thead>
+                <tr className="border-b-2 border-zine-burntYellow">
+                  <th className="py-2 pr-3 w-6">
+                    <input
+                      type="checkbox"
+                      aria-label="selecionar todos"
+                      checked={allVisibleSelected}
+                      onChange={toggleAllVisible}
+                    />
+                  </th>
+                  <th className="text-left py-2 pr-3 cursor-pointer select-none" onClick={toggleSortName}>
+                    Nome {sortKey === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </th>
+                  <th className="text-left py-2 pr-3">Email</th>
+                  <th className="text-left py-2 pr-3">Origem</th>
+                  <th className="text-left py-2 pr-3">Status</th>
+                  <th className="text-left py-2 pr-3">+1</th>
+                  <th className="text-left py-2 pr-3">Data</th>
+                  <th className="py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((entry) => (
+                  <tr
+                    key={entry.entryKey}
+                    className="border-b border-zine-burntOrange/20 hover:bg-zine-burntYellow/10"
+                  >
+                    <td className="py-2 pr-3">
+                      <input
+                        type="checkbox"
+                        aria-label={`selecionar ${entry.displayName}`}
+                        checked={selected.has(entry.entryKey)}
+                        onChange={() => toggleOne(entry.entryKey)}
+                      />
+                    </td>
+                    <td className="py-2 pr-3 font-bold">{entry.displayName}</td>
+                    <td className="py-2 pr-3 text-zine-burntOrange/70">{entry.email ?? '—'}</td>
+                    <td className="py-2 pr-3">
+                      <span
+                        data-testid={`authmode-badge-${entry.userId}`}
+                        className={`inline-block px-2 py-0.5 text-xs border font-body ${
+                          entry.authMode === 'firebase'
+                            ? 'border-zine-burntOrange bg-zine-burntOrange/20 text-zine-burntOrange'
+                            : 'border-zine-mint bg-zine-mint/30 text-zine-burntOrange'
+                        }`}
+                      >
+                        {entry.authMode === 'firebase' ? 'conta' : 'convidado'}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span className={`inline-block px-2 py-0.5 text-xs border ${
+                        entry.status === 'confirmed'
+                          ? 'border-zine-mint bg-zine-mint/20'
+                          : entry.status === 'waitlisted'
+                            ? 'border-zine-burntYellow bg-zine-burntYellow/20'
+                            : entry.status === 'pending_approval'
+                              ? 'border-zine-periwinkle bg-zine-periwinkle/20'
+                              : 'border-zine-burntOrange/40 bg-zine-burntOrange/10'
+                      }`}>
+                        {STATUS_LABELS[entry.status]}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3">
+                      {entry.plusOne ? (entry.plusOneName ?? 'sim') : '—'}
+                    </td>
+                    <td className="py-2 pr-3 text-zine-burntOrange/60">
+                      {new Date(entry.createdAt).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="py-2">
+                      {entry.status === 'pending_approval' && (
+                        <div className="flex gap-1">
+                          <Button
+                            disabled={!!actionBusy}
+                            onClick={() => void handleAction(entry.entryKey, 'confirmed')}
+                          >
+                            {actionBusy === entry.entryKey + 'confirmed' ? '…' : 'aprovar'}
+                          </Button>
+                          <Button
+                            disabled={!!actionBusy}
+                            onClick={() => void handleAction(entry.entryKey, 'rejected')}
+                          >
+                            {actionBusy === entry.entryKey + 'rejected' ? '…' : 'recusar'}
+                          </Button>
+                        </div>
+                      )}
+                      {entry.status === 'confirmed' && (
+                        <div className="flex gap-2 text-sm">
+                          <button
+                            type="button"
+                            disabled={!!actionBusy}
+                            onClick={() => void handleRemove(entry.entryKey)}
+                            className="underline text-zine-burntOrange disabled:opacity-50"
+                          >
+                            {actionBusy === entry.entryKey + 'remove' ? '…' : 'remover'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!!actionBusy}
+                            onClick={() => void handleMoveToWaitlist(entry.entryKey)}
+                            className="underline text-zine-burntOrange disabled:opacity-50"
+                          >
+                            {actionBusy === entry.entryKey + 'waitlist' ? '…' : '→ fila'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards (< md) */}
+          <div className="md:hidden flex flex-col gap-3">
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                aria-label="selecionar todos"
+                checked={allVisibleSelected}
+                onChange={toggleAllVisible}
+              />
+              <span className="font-body text-sm text-zine-burntOrange/70">Selecionar tudo</span>
+            </div>
+            {visible.map((entry) => (
+              <div
+                key={entry.entryKey}
+                className="border-2 border-zine-burntOrange p-3 bg-zine-cream/50"
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-start gap-2 flex-1">
                     <input
                       type="checkbox"
                       aria-label={`selecionar ${entry.displayName}`}
                       checked={selected.has(entry.entryKey)}
                       onChange={() => toggleOne(entry.entryKey)}
+                      className="mt-1"
                     />
-                  </td>
-                  <td className="py-2 pr-3 font-bold">{entry.displayName}</td>
-                  <td className="py-2 pr-3 text-zine-burntOrange/70">{entry.email ?? '—'}</td>
-                  <td className="py-2 pr-3">
-                    <span
-                      data-testid={`authmode-badge-${entry.userId}`}
-                      className={`inline-block px-2 py-0.5 text-xs border font-body ${
-                        entry.authMode === 'firebase'
-                          ? 'border-zine-burntOrange bg-zine-burntOrange/20 text-zine-burntOrange'
-                          : 'border-zine-mint bg-zine-mint/30 text-zine-burntOrange'
-                      }`}
-                    >
-                      {entry.authMode === 'firebase' ? 'conta' : 'convidado'}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display font-bold text-zine-burntOrange truncate">
+                        {entry.displayName}
+                      </p>
+                      <p className="font-body text-xs text-zine-burntOrange/70 truncate">
+                        {entry.email ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className={`inline-block px-2 py-0.5 text-xs border font-body ${
+                    entry.status === 'confirmed'
+                      ? 'border-zine-mint bg-zine-mint/20'
+                      : entry.status === 'waitlisted'
+                        ? 'border-zine-burntYellow bg-zine-burntYellow/20'
+                        : entry.status === 'pending_approval'
+                          ? 'border-zine-periwinkle bg-zine-periwinkle/20'
+                          : 'border-zine-burntOrange/40 bg-zine-burntOrange/10'
+                  }`}>
+                    {STATUS_LABELS[entry.status]}
+                  </span>
+                  <span className={`inline-block px-2 py-0.5 text-xs border font-body ${
+                    entry.authMode === 'firebase'
+                      ? 'border-zine-burntOrange bg-zine-burntOrange/20 text-zine-burntOrange'
+                      : 'border-zine-mint bg-zine-mint/30 text-zine-burntOrange'
+                  }`}>
+                    {entry.authMode === 'firebase' ? 'conta' : 'convidado'}
+                  </span>
+                  {entry.plusOne && (
+                    <span className="inline-block px-2 py-0.5 text-xs border border-zine-burntOrange/40 font-body text-zine-burntOrange/70">
+                      +1: {entry.plusOneName ?? 'sim'}
                     </span>
-                  </td>
-                  <td className="py-2 pr-3">
-                    <span className={`inline-block px-2 py-0.5 text-xs border ${
-                      entry.status === 'confirmed'
-                        ? 'border-zine-mint bg-zine-mint/20'
-                        : entry.status === 'waitlisted'
-                          ? 'border-zine-burntYellow bg-zine-burntYellow/20'
-                          : entry.status === 'pending_approval'
-                            ? 'border-zine-periwinkle bg-zine-periwinkle/20'
-                            : 'border-zine-burntOrange/40 bg-zine-burntOrange/10'
-                    }`}>
-                      {STATUS_LABELS[entry.status]}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3">
-                    {entry.plusOne ? (entry.plusOneName ?? 'sim') : '—'}
-                  </td>
-                  <td className="py-2 pr-3 text-zine-burntOrange/60">
-                    {new Date(entry.createdAt).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="py-2">
-                    {entry.status === 'pending_approval' && (
-                      <div className="flex gap-1">
-                        <Button
-                          disabled={!!actionBusy}
-                          onClick={() => void handleAction(entry.entryKey, 'confirmed')}
-                        >
-                          {actionBusy === entry.entryKey + 'confirmed' ? '…' : 'aprovar'}
-                        </Button>
-                        <Button
-                          disabled={!!actionBusy}
-                          onClick={() => void handleAction(entry.entryKey, 'rejected')}
-                        >
-                          {actionBusy === entry.entryKey + 'rejected' ? '…' : 'recusar'}
-                        </Button>
-                      </div>
-                    )}
-                    {entry.status === 'confirmed' && (
-                      <div className="flex gap-2 text-sm">
-                        <button
-                          type="button"
-                          disabled={!!actionBusy}
-                          onClick={() => void handleRemove(entry.entryKey)}
-                          className="underline text-zine-burntOrange disabled:opacity-50"
-                        >
-                          {actionBusy === entry.entryKey + 'remove' ? '…' : 'remover'}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!!actionBusy}
-                          onClick={() => void handleMoveToWaitlist(entry.entryKey)}
-                          className="underline text-zine-burntOrange disabled:opacity-50"
-                        >
-                          {actionBusy === entry.entryKey + 'waitlist' ? '…' : '→ fila'}
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                </div>
+
+                <div className="font-body text-xs text-zine-burntOrange/60 mb-2">
+                  {new Date(entry.createdAt).toLocaleDateString('pt-BR')}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  {entry.status === 'pending_approval' && (
+                    <>
+                      <Button
+                        disabled={!!actionBusy}
+                        onClick={() => void handleAction(entry.entryKey, 'confirmed')}
+                        className="w-full text-sm py-1"
+                      >
+                        {actionBusy === entry.entryKey + 'confirmed' ? '…' : 'aprovar'}
+                      </Button>
+                      <Button
+                        disabled={!!actionBusy}
+                        onClick={() => void handleAction(entry.entryKey, 'rejected')}
+                        className="w-full text-sm py-1"
+                      >
+                        {actionBusy === entry.entryKey + 'rejected' ? '…' : 'recusar'}
+                      </Button>
+                    </>
+                  )}
+                  {entry.status === 'confirmed' && (
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        disabled={!!actionBusy}
+                        onClick={() => void handleRemove(entry.entryKey)}
+                        className="flex-1 underline text-xs text-zine-burntOrange disabled:opacity-50 font-body py-1"
+                      >
+                        {actionBusy === entry.entryKey + 'remove' ? '…' : 'remover'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!!actionBusy}
+                        onClick={() => void handleMoveToWaitlist(entry.entryKey)}
+                        className="flex-1 underline text-xs text-zine-burntOrange disabled:opacity-50 font-body py-1"
+                      >
+                        {actionBusy === entry.entryKey + 'waitlist' ? '…' : '→ fila'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {selected.size > 0 && (
-        <div className="fixed bottom-4 right-4 bg-zine-cream border-2 border-zine-burntOrange p-3 shadow-lg font-body text-sm text-zine-burntOrange">
+        <div className="fixed bottom-4 right-4 bg-zine-cream border-2 border-zine-burntOrange p-3 shadow-lg font-body text-sm text-zine-burntOrange z-40">
           <div className="mb-2">
             {selected.size} selecionado{selected.size !== 1 ? 's' : ''}
             {selectedApprovable.length !== selected.size && (
@@ -429,6 +721,72 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
           >
             {bulkBusy ? '…' : `aprovar ${selectedApprovable.length} selecionado${selectedApprovable.length !== 1 ? 's' : ''}`}
           </Button>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-zine-cream border-4 border-zine-burntOrange p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="font-display text-2xl text-zine-burntOrange mb-4">Importar presença</h3>
+
+            {!importPreview ? (
+              <div className="flex flex-col gap-4">
+                <p className="font-body text-sm text-zine-burntOrange/70">
+                  Suporta CSV e Excel (.xlsx). Campos esperados: <strong>nome</strong> (ou displayName) + <strong>email</strong>.
+                </p>
+                <label className="flex flex-col gap-2">
+                  <span className="font-body text-zine-burntOrange">Escolher arquivo</span>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    onChange={(e) => {
+                      const file = e.currentTarget.files?.[0];
+                      if (file) {
+                        void handleImportFile(file);
+                      }
+                    }}
+                    className="font-body text-sm px-3 py-2 border-2 border-zine-burntYellow"
+                  />
+                </label>
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowImportModal(false)}>Cancelar</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="bg-zine-cream/50 border border-zine-burntOrange/30 p-3">
+                  <p className="font-body text-xs text-zine-burntOrange/70 mb-2">
+                    Primeiras 5 entradas (total: {importFile ? 'carregando…' : '?'})
+                  </p>
+                  <ul className="space-y-1">
+                    {importPreview.map((p, i) => (
+                      <li key={i} className="font-body text-xs text-zine-burntOrange">
+                        <span className="font-bold">{p.displayName}</span> · {p.email}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    disabled={importBusy}
+                    onClick={() => {
+                      setImportFile(null);
+                      setImportPreview(null);
+                    }}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    disabled={importBusy}
+                    onClick={() => void handleConfirmImport()}
+                  >
+                    {importBusy ? 'importando…' : 'confirmar'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </ZineFrame>

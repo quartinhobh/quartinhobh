@@ -68,7 +68,7 @@ describe('RsvpPanel', () => {
 
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
     expect(mockFetch).toHaveBeenCalledWith('evt1', 'tok');
   });
 
@@ -87,13 +87,13 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
-    expect(screen.getByText('Bruno')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
+    expect(screen.getAllByText('Bruno')[0]).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Confirmados' }));
 
-    expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.queryByText('Bruno')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Alice')[0]).toBeInTheDocument();
+    expect(screen.queryAllByText('Bruno').length).toBe(0);
   });
 
   it('renders authMode badges for guest vs firebase entries', async () => {
@@ -110,7 +110,7 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
     expect(screen.getByTestId('authmode-badge-u1')).toHaveTextContent('conta');
     expect(screen.getByTestId('authmode-badge-guest:abc')).toHaveTextContent('convidado');
   });
@@ -121,9 +121,9 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Bruno')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /aprovar/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /recusar/i })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText('Bruno')[0]).toBeInTheDocument());
+    expect(screen.getAllByRole('button', { name: /aprovar/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /recusar/i })[0]).toBeInTheDocument();
   });
 
   it('calls approveRejectRsvp when approve button clicked', async () => {
@@ -133,9 +133,9 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /aprovar/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /aprovar/i })[0]).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: /aprovar/i }));
+    await userEvent.click(screen.getAllByRole('button', { name: /aprovar/i })[0]);
 
     await waitFor(() =>
       expect(mockAction).toHaveBeenCalledWith('evt1', 'firebase:u2', 'confirmed', 'tok'),
@@ -158,13 +158,13 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
 
     await userEvent.type(screen.getByPlaceholderText(/buscar/i), 'ma');
 
-    expect(screen.getByText('Maria')).toBeInTheDocument();
-    expect(screen.queryByText('Alice')).not.toBeInTheDocument();
-    expect(screen.queryByText('Bruno')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Maria')[0]).toBeInTheDocument();
+    expect(screen.queryAllByText('Alice').length).toBe(0);
+    expect(screen.queryAllByText('Bruno').length).toBe(0);
   });
 
   it('clicking Nome header toggles sort direction', async () => {
@@ -181,7 +181,7 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
 
     const header = screen.getByText(/Nome/i);
     await userEvent.click(header);
@@ -200,10 +200,10 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('A')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('A')[0]).toBeInTheDocument());
 
-    await userEvent.click(screen.getByLabelText('selecionar A'));
-    await userEvent.click(screen.getByLabelText('selecionar B'));
+    await userEvent.click(screen.getAllByLabelText('selecionar A')[0]);
+    await userEvent.click(screen.getAllByLabelText('selecionar B')[0]);
 
     const bulkBtn = screen.getByRole('button', { name: /aprovar 2/i });
     await userEvent.click(bulkBtn);
@@ -221,9 +221,9 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: /remover/i }));
+    await userEvent.click(screen.getAllByRole('button', { name: /remover/i })[0]);
 
     await waitFor(() =>
       expect(mockCancel).toHaveBeenCalledWith('tok', 'evt1', 'firebase:u1'),
@@ -237,7 +237,7 @@ describe('RsvpPanel', () => {
 
     render(<RsvpPanel eventId="evt1" idToken="tok" />);
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Alice')[0]).toBeInTheDocument());
 
     const counter = screen.getByTestId('rsvp-counter');
     expect(counter.textContent).toContain('1');
