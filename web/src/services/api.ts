@@ -17,6 +17,7 @@ import type {
   Product,
   FavoriteAlbum,
   LinkTreeItem,
+  RsvpConfig,
   RsvpEntry,
   RsvpSummary,
   SocialLink,
@@ -127,6 +128,7 @@ export interface EventCreatePayload {
   chatEnabled?: boolean;
   chatOpensAt?: number | null;
   chatClosesAt?: number | null;
+  rsvp?: RsvpConfig;
 }
 
 export async function createEvent(
