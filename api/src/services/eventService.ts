@@ -11,7 +11,7 @@ import type {
   RsvpEntry,
 } from '../types';
 import { fetchAlbum } from './musicbrainzService';
-import { generateBlurPlaceholder } from './blurPlaceholder';
+import { fetchCoverArt } from './coverArtService';
 import { computeEventStatus, withDerivedStatus } from './eventStatus';
 
 const EVENTS = 'events';
@@ -59,12 +59,16 @@ export async function createEvent(
 
   // Snapshot MusicBrainz data at creation time so the app never needs to
   // re-fetch it — avoids rate limits when 60 users hit the same event.
+  // Cover art is fetched via waterfall: CAA → Deezer → Last.fm → null
   let album: EventAlbumSnapshot | null = null;
   if (payload.mbAlbumId) {
     try {
       const mb = await fetchAlbum(payload.mbAlbumId);
-      const coverUrl = `https://coverartarchive.org/release/${mb.id}/front-250`;
-      const coverBlurDataUrl = await generateBlurPlaceholder(coverUrl);
+      const { coverUrl, coverBlurDataUrl } = await fetchCoverArt({
+        mbid: mb.id,
+        artistCredit: mb.artistCredit,
+        albumTitle: mb.title,
+      });
       album = {
         albumTitle: mb.title,
         artistCredit: mb.artistCredit,

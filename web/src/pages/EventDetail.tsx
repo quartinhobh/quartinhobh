@@ -42,8 +42,23 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
         if (cancelled) return;
         setEvent(ev);
         if (ev) {
-          const [rel, tal, pics] = await Promise.all([
-            fetchMusicBrainzAlbum(ev.mbAlbumId).catch(() => null),
+          // Use snapshot if available (Branch 1), otherwise fetch from MB API (Branch 2)
+          let rel: MusicBrainzRelease | null = null;
+          if (ev.album) {
+            // Snapshot exists — assemble from it without network call
+            rel = {
+              id: ev.mbAlbumId,
+              title: ev.album.albumTitle,
+              artistCredit: ev.album.artistCredit,
+              date: ev.date,
+              tracks: ev.album.tracks,
+            };
+          } else {
+            // Snapshot is null — fetch from MB API as fallback
+            rel = await fetchMusicBrainzAlbum(ev.mbAlbumId).catch(() => null);
+          }
+
+          const [tal, pics] = await Promise.all([
             fetchTallies(eventId).catch(() => null),
             fetchPhotos(eventId).catch(() => [] as Photo[]),
           ]);
