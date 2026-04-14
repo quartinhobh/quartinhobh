@@ -227,7 +227,7 @@ export interface RsvpEntry {
   status: RsvpStatus;
   plusOne: boolean;
   plusOneName: string | null;
-  email: string;
+  email?: string | null;
   displayName: string;
   instagram?: string | null;
   authMode: RsvpAuthMode;

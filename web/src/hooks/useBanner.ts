@@ -53,12 +53,16 @@ export function useBanner(): UseBannerResult {
         const bannerData = await fetchActiveBanner();
         if (bannerData?.imageUrl) {
           // Preload image before setting banner state to avoid layout shift
-          await new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve();
-            img.onerror = () => resolve(); // Resolve even on error so banner still shows
-            img.src = bannerData.imageUrl;
-          });
+          // With 3-second timeout so stalled requests don't block indefinitely
+          await Promise.race([
+            new Promise<void>((resolve) => {
+              const img = new Image();
+              img.onload = () => resolve();
+              img.onerror = () => resolve(); // Resolve even on error so banner still shows
+              img.src = bannerData.imageUrl;
+            }),
+            new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+          ]);
         }
         setBanner(bannerData);
       } catch {

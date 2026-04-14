@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ZineFrame } from '@/components/common/ZineFrame';
 import type { Event, MusicBrainzRelease } from '@/types';
 
@@ -20,6 +20,12 @@ export const AlbumDisplay: React.FC<AlbumDisplayProps> = ({
   const [loaded, setLoaded] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const blurSrc = event.album?.coverBlurDataUrl;
+
+  // Reset state when coverUrl changes
+  useEffect(() => {
+    setLoaded(false);
+    setCoverFailed(false);
+  }, [coverUrl]);
 
   return (
     <ZineFrame bg="mint" borderColor="cream">
@@ -70,7 +76,6 @@ export const AlbumDisplay: React.FC<AlbumDisplayProps> = ({
         {album?.artistCredit ? (
           <p className="font-body text-xl text-zine-cream">{album.artistCredit}</p>
         ) : null}
-        {/* <p className="font-body text-zine-cream">{event.date}</p> */}
       </div>
     </ZineFrame>
   );

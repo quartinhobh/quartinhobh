@@ -51,7 +51,10 @@ async function fetchFromCAA(mbid: string): Promise<string | null> {
 
   for (const url of urls) {
     try {
-      const res = await fetch(url, { method: 'HEAD', timeout: 5000 });
+      const res = await fetch(url, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(5000),
+      });
       if (res.ok) {
         return url;
       }

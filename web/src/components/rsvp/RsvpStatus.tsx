@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { RsvpSummary } from '@/types';
 
 interface RsvpStatusProps {
@@ -9,15 +9,15 @@ interface RsvpStatusProps {
 export const RsvpStatus: React.FC<RsvpStatusProps> = ({ summary, isAdmin = false }) => {
   const { confirmedCount, capacity, waitlistCount, confirmedAvatars } = summary;
 
-  // Shuffle avatars for variety between visits
-  const shuffledAvatars = useMemo(() => {
+  // Shuffle avatars once per component instance for variety between visits
+  const [shuffledAvatars] = useState(() => {
     const arr = [...confirmedAvatars];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  }, [confirmedAvatars]);
+  });
   const hasCapacity = capacity !== null;
   const spotsLeft = hasCapacity ? capacity - confirmedCount : null;
 

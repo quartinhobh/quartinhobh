@@ -7,7 +7,6 @@
 
 import { adminAuth, adminDb } from '../src/config/firebase';
 import type {
-  User,
   UserRole,
   Event,
   EventStatus,
@@ -166,8 +165,8 @@ async function ensureExtraEvent(
 }
 
 async function addRsvps(eventId: string, adminUid: string): Promise<void> {
-  const ref = adminDb.collection('events').doc(eventId);
-  const snap = await ref.get();
+  const eventRef = adminDb.collection('events').doc(eventId);
+  const snap = await eventRef.get();
   if (!snap.exists) {
     console.log(`[seed-extra] event ${eventId} not found, skipping RSVPs`);
     return;
@@ -193,7 +192,8 @@ async function addRsvps(eventId: string, adminUid: string): Promise<void> {
     updatedAt: Date.now(),
   };
 
-  await ref.update({ rsvp: rsvpDoc });
+  const rsvpRef = adminDb.collection('rsvps').doc(eventId);
+  await rsvpRef.set(rsvpDoc);
   console.log(`[seed-extra] added RSVP for event ${eventId}`);
 }
 

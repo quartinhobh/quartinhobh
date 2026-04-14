@@ -326,7 +326,7 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
 
       // Páginas adicionais se conteúdo exceder
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
+        position -= (pdfHeight - 10);
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;

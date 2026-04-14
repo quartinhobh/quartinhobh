@@ -3,7 +3,7 @@
 import { Router, type Request, type Response } from 'express';
 import {
   fetchAlbum,
-  fetchReleaseGroupTracks,
+  fetchTracks,
   searchReleases,
 } from '../services/musicbrainzService';
 
@@ -41,7 +41,7 @@ musicbrainzRouter.get(
   '/release-groups/:mbid/tracks',
   async (req: Request, res: Response) => {
     try {
-      const tracks = await fetchReleaseGroupTracks(req.params.mbid!);
+      const tracks = await fetchTracks(req.params.mbid!);
       res.status(200).json({ tracks });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'mb_failed';

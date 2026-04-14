@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { globalLimiter } from './middleware/rateLimit';
 import { authRouter } from './routes/auth';
@@ -40,7 +40,7 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true,
 }));
-app.use((req: Request, res: Response, next: Function) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   next();
 });

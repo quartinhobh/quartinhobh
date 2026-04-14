@@ -161,14 +161,18 @@ export async function searchReleases(
   return results;
 }
 
-export async function fetchReleaseGroupTracks(
+/**
+ * Fetch tracks for a given MusicBrainz ID.
+ * @param mbid A MusicBrainz release ID or release-group ID.
+ * @returns Array of tracks from the release or release-group.
+ */
+export async function fetchTracks(
   mbid: string,
 ): Promise<MusicBrainzTrack[]> {
   const cacheKey = `tracks:${mbid}`;
   const cached = cacheGet(cacheKey) as MusicBrainzTrack[] | undefined;
   if (cached) return cached;
 
-  // mbid can be either a release ID or release-group ID
   // Try as release ID first (most common case from EventForm)
   try {
     const release = (await mbFetch(
@@ -191,4 +195,9 @@ export async function fetchReleaseGroupTracks(
     cacheSet(cacheKey, tracks);
     return tracks;
   }
+}
+
+// Exported for testing — clears the in-memory cache
+export function __clearCache(): void {
+  cache.clear();
 }

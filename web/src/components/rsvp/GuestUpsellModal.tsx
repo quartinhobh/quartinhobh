@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import Modal from '@/components/common/Modal';
 import Button from '@/components/common/Button';
@@ -25,6 +25,11 @@ export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState(false);
+
+  // Sync email state when initialEmail prop changes
+  useEffect(() => {
+    setEmail(initialEmail ?? '');
+  }, [initialEmail]);
 
   function handleClose() {
     setEmail(initialEmail ?? '');

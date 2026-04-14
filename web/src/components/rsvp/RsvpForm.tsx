@@ -60,7 +60,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const emailTrimmed = email.trim();
-    const instagramTrimmed = instagram.trim();
+    const instagramTrimmed = instagram.trim().replace(/^@/, '');
 
     // Validate: at least email or instagram required
     if (!emailTrimmed && !instagramTrimmed) {
@@ -144,6 +144,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
         aria-label="instagram"
         value={instagram}
         onChange={(e) => setInstagram(e.target.value)}
+        maxLength={30}
         className="font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange"
       />
       <label className="flex items-center gap-2 font-body text-sm text-zine-burntOrange cursor-pointer">

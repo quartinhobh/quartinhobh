@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import app from '../index';
-import { MB_USER_AGENT } from '../services/musicbrainzService';
+import { MB_USER_AGENT, __clearCache } from '../services/musicbrainzService';
 
 interface MockFetchCall {
   url: string;
@@ -26,6 +26,7 @@ function mockFetchJson(body: unknown, ok = true, status = 200): void {
 
 beforeEach(() => {
   calls.length = 0;
+  __clearCache();
 });
 
 afterEach(() => {
@@ -76,6 +77,10 @@ describe('GET /mb/release-groups/:mbid/tracks', () => {
     globalThis.fetch = vi.fn(async (url: string | URL) => {
       callCount++;
       const u = String(url);
+      if (u.includes('/release/rg-1')) {
+        // First attempt: rg-1 as release ID fails
+        throw new Error('not_found');
+      }
       if (u.includes('/release-group/')) {
         return {
           ok: true,
@@ -83,6 +88,7 @@ describe('GET /mb/release-groups/:mbid/tracks', () => {
           json: async () => ({ releases: [{ id: 'rel-1', title: 'X' }] }),
         } as unknown as Response;
       }
+      // Release lookup by ID succeeds
       return {
         ok: true,
         status: 200,
@@ -102,6 +108,6 @@ describe('GET /mb/release-groups/:mbid/tracks', () => {
     expect(res.status).toBe(200);
     expect(res.body.tracks).toHaveLength(1);
     expect(res.body.tracks[0].title).toBe('Alpha');
-    expect(callCount).toBe(2);
+    expect(callCount).toBe(3);
   });
 });
