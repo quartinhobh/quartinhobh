@@ -38,6 +38,7 @@ function successText(status: SuccessState['status']): string {
 export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onClose = () => {}, onSuccess, useModal = false }) => {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [plusOne, setPlusOne] = useState(false);
   const [plusOneName, setPlusOneName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
   function handleClose() {
     setDisplayName('');
     setEmail('');
+    setInstagram('');
     setPlusOne(false);
     setPlusOneName('');
     setError(null);
@@ -57,11 +59,21 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const emailTrimmed = email.trim();
+    const instagramTrimmed = instagram.trim();
+
+    // Validate: at least email or instagram required
+    if (!emailTrimmed && !instagramTrimmed) {
+      setError('preencha email ou instagram');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res = await submitRsvpGuest(eventId, {
-        email: email.trim(),
+        email: emailTrimmed || undefined,
+        instagram: instagramTrimmed || undefined,
         displayName: displayName.trim(),
         plusOne,
         plusOneName: plusOne ? plusOneName.trim() || undefined : undefined,
@@ -72,7 +84,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
         return;
       }
       setSuccess({ status, entryKey: res.entryKey });
-      openModal({ email: email.trim(), displayName: displayName.trim() });
+      openModal({ email: emailTrimmed || undefined, instagram: instagramTrimmed || undefined, displayName: displayName.trim() });
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown';
@@ -90,7 +102,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
           {successText(success.status)}
         </p>
         <p className="font-body text-sm text-zine-cream/80">
-          te mandamos um email com os detalhes
+          {email ? 'te mandamos um email com os detalhes' : 'entraremos em contato pelo instagram'}
         </p>
       </div>
     );
@@ -120,11 +132,18 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ eventId, isOpen = false, onC
       />
       <input
         type="email"
-        placeholder="seu email"
+        placeholder="seu email (opcional)"
         aria-label="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        required
+        className="font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange"
+      />
+      <input
+        type="text"
+        placeholder="seu instagram (opcional)"
+        aria-label="instagram"
+        value={instagram}
+        onChange={(e) => setInstagram(e.target.value)}
         className="font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange"
       />
       <label className="flex items-center gap-2 font-body text-sm text-zine-burntOrange cursor-pointer">

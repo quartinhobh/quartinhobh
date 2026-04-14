@@ -7,16 +7,19 @@ import { auth } from '@/services/firebase';
 export interface GuestUpsellModalProps {
   isOpen: boolean;
   onClose: () => void;
-  email: string;
+  email?: string;
   displayName: string;
+  instagram?: string;
 }
 
 export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
   isOpen,
   onClose,
-  email,
+  email: initialEmail,
   displayName: _displayName,
+  instagram: _instagram,
 }) => {
+  const [email, setEmail] = useState(initialEmail ?? '');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,6 +27,7 @@ export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
   const [created, setCreated] = useState(false);
 
   function handleClose() {
+    setEmail(initialEmail ?? '');
     setPassword('');
     setConfirm('');
     setError(null);
@@ -36,6 +40,12 @@ export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
     e.preventDefault();
     setError(null);
 
+    // Validate email is provided (required if only instagram was provided)
+    if (!email.trim()) {
+      setError('email é necessário pra criar conta');
+      return;
+    }
+
     if (password.length < 6) {
       setError('senha precisa ter no mínimo 6 caracteres');
       return;
@@ -47,7 +57,7 @@ export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
 
     setBusy(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
       setCreated(true);
       setTimeout(() => {
         handleClose();
@@ -75,6 +85,8 @@ export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
     );
   }
 
+  const hasEmail = initialEmail;
+
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="salva pra próxima?">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -82,13 +94,24 @@ export const GuestUpsellModal: React.FC<GuestUpsellModalProps> = ({
           você está na lista! quer salvar pra próxima? cria uma conta rapinha —
           ou fecha essa janela que já tá tudo certo.
         </p>
-        <input
-          type="email"
-          value={email}
-          disabled
-          aria-label="email"
-          className="font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream/50 dark:bg-zine-surface-dark/50 text-zine-burntOrange/60 dark:text-zine-cream/60"
-        />
+        {hasEmail ? (
+          <input
+            type="email"
+            value={email}
+            disabled
+            aria-label="email"
+            className="font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream/50 dark:bg-zine-surface-dark/50 text-zine-burntOrange/60 dark:text-zine-cream/60"
+          />
+        ) : (
+          <input
+            type="email"
+            placeholder="seu email (necessário pra criar conta)"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-label="email"
+            className="font-body px-3 py-2 border-4 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus:border-zine-burntOrange"
+          />
+        )}
         <input
           type="password"
           placeholder="senha (mínimo 6 caracteres)"

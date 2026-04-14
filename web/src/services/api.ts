@@ -1102,7 +1102,8 @@ export async function submitRsvp(
 export async function submitRsvpGuest(
   eventId: string,
   payload: {
-    email: string;
+    email?: string;
+    instagram?: string;
     displayName: string;
     plusOne?: boolean;
     plusOneName?: string;

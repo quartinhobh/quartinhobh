@@ -5,7 +5,8 @@ import React, { createContext, useState, useContext, useCallback } from 'react';
 // The hook has no separate implementation and must be in the same file for proper encapsulation.
 
 export interface GuestUpsellModalData {
-  email: string;
+  email?: string;
+  instagram?: string;
   displayName: string;
 }
 

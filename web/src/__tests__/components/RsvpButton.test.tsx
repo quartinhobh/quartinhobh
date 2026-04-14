@@ -124,7 +124,7 @@ describe('RsvpButton', () => {
     expect(screen.getByText(/configuração inválida/i)).toBeInTheDocument();
   });
 
-  it('shows "esgotado" when full and no waitlist', () => {
+  it('shows "entrar na fila de espera" button when full even without waitlist', () => {
     render(
       <GuestUpsellProvider>
         <RsvpButton
@@ -137,7 +137,7 @@ describe('RsvpButton', () => {
       />
       </GuestUpsellProvider>,
     );
-    expect(screen.getByText('esgotado')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /entrar na fila de espera/i })).toBeInTheDocument();
   });
 
   it('shows "entrar na fila de espera" when full but waitlist enabled', () => {

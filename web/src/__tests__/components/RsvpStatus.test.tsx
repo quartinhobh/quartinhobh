@@ -11,7 +11,7 @@ describe('RsvpStatus', () => {
       capacity: 30,
       confirmedAvatars: [],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText('5/30 confirmados')).toBeInTheDocument();
   });
 
@@ -22,7 +22,7 @@ describe('RsvpStatus', () => {
       capacity: null,
       confirmedAvatars: [],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText('5 confirmados')).toBeInTheDocument();
   });
 
@@ -33,7 +33,7 @@ describe('RsvpStatus', () => {
       capacity: 30,
       confirmedAvatars: [],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText(/25 vagas restantes/i)).toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe('RsvpStatus', () => {
       capacity: 30,
       confirmedAvatars: [],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText('esgotado')).toBeInTheDocument();
   });
 
@@ -55,7 +55,7 @@ describe('RsvpStatus', () => {
       capacity: 30,
       confirmedAvatars: [],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText(/3 na fila de espera/i)).toBeInTheDocument();
   });
 
@@ -69,7 +69,7 @@ describe('RsvpStatus', () => {
         { id: 'u2', displayName: 'Bruno', avatarUrl: null },
       ],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText('A')).toBeInTheDocument();
     expect(screen.getByText('B')).toBeInTheDocument();
   });
@@ -83,7 +83,7 @@ describe('RsvpStatus', () => {
         { id: 'u1', displayName: 'Alice', avatarUrl: null },
       ],
     };
-    render(<RsvpStatus summary={summary} />);
+    render(<RsvpStatus summary={summary} isAdmin />);
     expect(screen.getByText('+9')).toBeInTheDocument();
   });
 
@@ -94,7 +94,7 @@ describe('RsvpStatus', () => {
       capacity: 30,
       confirmedAvatars: [],
     };
-    const { container: c1 } = render(<RsvpStatus summary={withCapacity} />);
+    const { container: c1 } = render(<RsvpStatus summary={withCapacity} isAdmin />);
     // Progress bar has inline width style
     expect(c1.querySelector('[style*="width"]')).toBeTruthy();
 
@@ -104,7 +104,7 @@ describe('RsvpStatus', () => {
       capacity: null,
       confirmedAvatars: [],
     };
-    const { container: c2 } = render(<RsvpStatus summary={withoutCapacity} />);
+    const { container: c2 } = render(<RsvpStatus summary={withoutCapacity} isAdmin />);
     expect(c2.querySelector('[style*="width"]')).toBeFalsy();
   });
 });

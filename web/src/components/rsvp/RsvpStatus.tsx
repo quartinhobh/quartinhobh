@@ -2,32 +2,46 @@ import type { RsvpSummary } from '@/types';
 
 interface RsvpStatusProps {
   summary: RsvpSummary;
+  isAdmin?: boolean;
 }
 
-export const RsvpStatus: React.FC<RsvpStatusProps> = ({ summary }) => {
+export const RsvpStatus: React.FC<RsvpStatusProps> = ({ summary, isAdmin = false }) => {
   const { confirmedCount, capacity, waitlistCount, confirmedAvatars } = summary;
   const hasCapacity = capacity !== null;
   const spotsLeft = hasCapacity ? capacity - confirmedCount : null;
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Capacity bar */}
-      <div className="flex items-center justify-between font-body text-sm text-zine-burntOrange">
-        <span className="font-bold">
-          {confirmedCount}{hasCapacity ? `/${capacity}` : ''} confirmado{confirmedCount !== 1 ? 's' : ''}
-        </span>
-        {spotsLeft !== null && spotsLeft > 0 && (
-          <span className="text-zine-burntOrange/60 italic">
-            {spotsLeft} vaga{spotsLeft !== 1 ? 's' : ''} restante{spotsLeft !== 1 ? 's' : ''}
+      {/* Capacity bar — only admins see counts */}
+      {isAdmin && (
+        <div className="flex items-center justify-between font-body text-sm text-zine-burntOrange">
+          <span className="font-bold">
+            {confirmedCount}{hasCapacity ? `/${capacity}` : ''} confirmado{confirmedCount !== 1 ? 's' : ''}
           </span>
-        )}
-        {spotsLeft !== null && spotsLeft <= 0 && (
-          <span className="text-zine-burntOrange font-bold italic">esgotado</span>
-        )}
-      </div>
+          {spotsLeft !== null && spotsLeft > 0 && (
+            <span className="text-zine-burntOrange/60 italic">
+              {spotsLeft} vaga{spotsLeft !== 1 ? 's' : ''} restante{spotsLeft !== 1 ? 's' : ''}
+            </span>
+          )}
+          {spotsLeft !== null && spotsLeft <= 0 && (
+            <span className="text-zine-burntOrange font-bold italic">esgotado</span>
+          )}
+        </div>
+      )}
 
-      {/* Progress bar */}
-      {hasCapacity && (
+      {/* Status message for non-admins */}
+      {!isAdmin && hasCapacity && spotsLeft !== null && (
+        <div className="font-body text-sm text-zine-burntOrange">
+          {spotsLeft > 0 ? (
+            <span>ainda tem vaga!</span>
+          ) : (
+            <span className="font-bold italic">esgotado</span>
+          )}
+        </div>
+      )}
+
+      {/* Progress bar — only admins see it */}
+      {isAdmin && hasCapacity && (
         <div className="h-2 bg-zine-cream dark:bg-zine-cream/20 border-2 border-zine-burntOrange/30 overflow-hidden">
           <div
             className="h-full bg-zine-mint dark:bg-zine-mint-dark transition-all duration-300"

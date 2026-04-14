@@ -174,15 +174,6 @@ export const RsvpButton: React.FC<RsvpButtonProps> = ({
     );
   }
 
-  // Full, no waitlist
-  if (isFull && !config.waitlistEnabled) {
-    return (
-      <div className="bg-zine-burntOrange border-4 border-zine-cream dark:border-zine-cream/30 px-4 py-3 text-center">
-        <p className="font-body font-bold text-zine-cream">esgotado</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-2">
       {/* +1 toggle */}
