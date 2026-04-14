@@ -11,9 +11,8 @@ export const BannerDisplay: React.FC = () => {
       <img
         src={banner.imageUrl}
         alt={banner.altText}
-        loading="lazy"
-        className="w-full object-cover rounded border-4 border-zine-cream dark:border-zine-cream/30"
-        style={{ maxHeight: 200 }}
+        loading="eager"
+        className="w-full object-cover rounded border-4 border-zine-cream dark:border-zine-cream/30 max-h-[200px]"
       />
       <button
         type="button"

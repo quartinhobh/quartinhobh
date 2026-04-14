@@ -48,9 +48,25 @@ export function useBanner(): UseBannerResult {
 
   // Fetch active banner on mount + re-fetch every 5 min
   useEffect(() => {
-    const load = () => fetchActiveBanner().then(setBanner).catch(() => setBanner(null));
+    const load = async () => {
+      try {
+        const bannerData = await fetchActiveBanner();
+        if (bannerData?.imageUrl) {
+          // Preload image before setting banner state to avoid layout shift
+          await new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // Resolve even on error so banner still shows
+            img.src = bannerData.imageUrl;
+          });
+        }
+        setBanner(bannerData);
+      } catch {
+        setBanner(null);
+      }
+    };
     void load();
-    const interval = setInterval(load, 5 * 60 * 1000);
+    const interval = setInterval(() => void load(), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
