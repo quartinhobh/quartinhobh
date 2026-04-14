@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { RsvpSummary } from '@/types';
 
 interface RsvpStatusProps {
@@ -7,6 +8,16 @@ interface RsvpStatusProps {
 
 export const RsvpStatus: React.FC<RsvpStatusProps> = ({ summary, isAdmin = false }) => {
   const { confirmedCount, capacity, waitlistCount, confirmedAvatars } = summary;
+
+  // Shuffle avatars for variety between visits
+  const shuffledAvatars = useMemo(() => {
+    const arr = [...confirmedAvatars];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [confirmedAvatars]);
   const hasCapacity = capacity !== null;
   const spotsLeft = hasCapacity ? capacity - confirmedCount : null;
 
@@ -39,14 +50,14 @@ export const RsvpStatus: React.FC<RsvpStatusProps> = ({ summary, isAdmin = false
         </div>
       )}
 
-      {/* Avatar row */}
+      {/* Avatar row — stacked with shuffle for variety */}
       {confirmedAvatars.length > 0 && (
-        <div className="flex items-center gap-1">
-          {confirmedAvatars.map((u) => (
+        <div className="flex items-center">
+          {shuffledAvatars.map((u) => (
             <div
               key={u.id}
               title={u.displayName}
-              className="w-7 h-7 rounded-full border-2 border-zine-cream dark:border-zine-cream/30 bg-zine-periwinkle dark:bg-zine-periwinkle-dark overflow-hidden flex-shrink-0"
+              className="w-7 h-7 rounded-full border-2 border-zine-cream dark:border-zine-cream/30 bg-zine-periwinkle dark:bg-zine-periwinkle-dark overflow-hidden flex-shrink-0 [&:not(:first-child)]:-ml-2"
             >
               {u.avatarUrl ? (
                 <img src={u.avatarUrl} alt={u.displayName} className="w-full h-full object-cover" />
