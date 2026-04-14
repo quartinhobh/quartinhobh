@@ -33,10 +33,27 @@ async function fetchEventData(
 ): Promise<CachedEventData> {
   let ev: Event | null;
   let initialRsvpSummary: RsvpSummary | null = null;
+
+  // Retry with exponential backoff for rate limiting
+  const fetchWithRetry = async <T,>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        return await fn();
+      } catch (err) {
+        const isRateLimited = err instanceof Error && err.message.includes('429');
+        const isLastAttempt = i === maxRetries - 1;
+        if (!isRateLimited || isLastAttempt) throw err;
+        // Exponential backoff: 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+      }
+    }
+    throw new Error('Max retries exceeded');
+  };
+
   if (eventId) {
-    ev = await fetchEventById(eventId);
+    ev = await fetchWithRetry(() => fetchEventById(eventId));
   } else {
-    const current = await fetchCurrentEvent();
+    const current = await fetchWithRetry(() => fetchCurrentEvent());
     ev = current?.event ?? null;
     initialRsvpSummary = current?.rsvpSummary ?? null;
   }
@@ -56,8 +73,8 @@ async function fetchEventData(
   } else if (ev) {
     try {
       const [albumData, tracksData] = await Promise.all([
-        fetchMusicBrainzAlbum(ev.mbAlbumId),
-        fetchMusicBrainzTracks(ev.mbAlbumId),
+        fetchWithRetry(() => fetchMusicBrainzAlbum(ev!.mbAlbumId), 2),
+        fetchWithRetry(() => fetchMusicBrainzTracks(ev!.mbAlbumId), 2),
       ]);
       alb = albumData;
       trks = tracksData.length > 0 ? tracksData : albumData.tracks;
@@ -96,7 +113,8 @@ export function useEvent(eventId: string | null): UseEventResult {
     };
 
     // Se tem cache, mostra na hora e refetch ao fundo
-    if (cached) {
+    const cachedData = useApiCache.getState().get<CachedEventData>(cacheKey);
+    if (cachedData) {
       setLoading(false);
       void run(); // Background refetch
     } else {
@@ -106,7 +124,7 @@ export function useEvent(eventId: string | null): UseEventResult {
     return () => {
       cancelled = true;
     };
-  }, [eventId, cacheKey, cached]);
+  }, [eventId, cacheKey]);
 
   return {
     event: data?.event ?? null,

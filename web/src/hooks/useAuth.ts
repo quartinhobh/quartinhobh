@@ -14,6 +14,7 @@ import {
 import { auth } from '@/services/firebase';
 import { fetchCurrentUser, postLinkSession } from '@/services/api';
 import { useSessionStore } from '@/store/sessionStore';
+import { useApiCache } from '@/store/apiCache';
 
 export function useAuth() {
   const { sessionId, firebaseUid, setFirebaseUid, setUser: setStoreUser, clear } =
@@ -114,6 +115,8 @@ export function useAuth() {
     setUser(null);
     setFirebaseUid(null);
     clear();
+    // Clear cached API data on logout
+    useApiCache.getState().invalidatePrefix('event:');
   };
 
   // OAuth providers (Google, Apple) always return verified emails.
