@@ -4,7 +4,7 @@
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
-.PHONY: help install up down logs seed reset dev api web stop \
+.PHONY: help install up down logs seed seed-extra reset dev api web stop \
         lint typecheck test test-emulators test-all \
         e2e e2e-install build clean \
         status
@@ -58,6 +58,10 @@ logs-emulator: ## Tail emulator logs only
 seed: ## Seed emulator with admin user + sample event (needs .env.seed)
 	@test -f .env.seed || (echo "✗ .env.seed missing. Run: cp .env.seed.example .env.seed"; exit 1)
 	bun run seed
+
+seed-extra: ## Seed extra: more users, events, RSVPs, products, links, banners
+	@test -f .env.seed || (echo "✗ .env.seed missing. Run: cp .env.seed.example .env.seed"; exit 1)
+	bun run seed-extra
 
 reset: down ## Wipe emulator data and start fresh (DESTRUCTIVE)
 	rm -rf .firebase-data

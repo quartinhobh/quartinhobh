@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ZineFrame } from '@/components/common/ZineFrame';
+import { ZineFrameNoWobble } from '@/components/common/ZineFrame';
 import { LyricsDisplay } from '@/components/events/LyricsDisplay';
 import { useLyrics } from '@/hooks/useLyrics';
 import type { MusicBrainzTrack, UserVote } from '@/types';
@@ -83,7 +83,7 @@ export const TrackList: React.FC<TrackListProps> = ({
   }
 
   return (
-    <ZineFrame bg="cream" borderColor="burntYellow">
+    <ZineFrameNoWobble bg="cream" borderColor="burntYellow">
       <ol className="font-body space-y-1" aria-label="tracks">
         {tracks.map((t) => {
           const isOpen = expandedId === t.id;
@@ -93,84 +93,86 @@ export const TrackList: React.FC<TrackListProps> = ({
 
           return (
             <li key={t.id}>
-              <div className="flex items-center gap-2 py-1 px-1">
-                {/* Track info — click to show lyrics */}
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isOpen ? null : t.id)}
-                  className="flex-1 flex items-baseline gap-3 hover:bg-zine-mint/20 dark:hover:bg-zine-mint-dark/30 rounded text-left min-w-0"
-                >
-                  <span className="font-display text-zine-burntYellow w-6 text-right shrink-0 text-sm">
-                    {t.position}
-                  </span>
-                  <span className="flex-1 text-zine-burntOrange dark:text-zine-cream truncate">
-                    {t.title}
-                  </span>
-                  {t.length ? (
-                    <span className="text-zine-burntYellow text-xs shrink-0">
-                      {formatDuration(t.length)}
+              <div
+                className="flex items-center gap-2 py-1 px-1 relative"
+                style={{ filter: 'url(#zine-wobble)' }}>
+                  {/* Track info — click to show lyrics */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isOpen ? null : t.id)}
+                    className="flex-1 flex items-baseline gap-3 hover:bg-zine-mint/20 dark:hover:bg-zine-mint-dark/30 rounded text-left min-w-0"
+                  >
+                    <span className="font-display text-zine-burntYellow w-6 text-right shrink-0 text-sm">
+                      {t.position}
                     </span>
-                  ) : null}
-                </button>
+                    <span className="flex-1 text-zine-burntOrange dark:text-zine-cream truncate">
+                      {t.title}
+                    </span>
+                    {t.length ? (
+                      <span className="text-zine-burntYellow text-xs shrink-0">
+                        {formatDuration(t.length)}
+                      </span>
+                    ) : null}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => void copyTrack(t)}
-                  title={isCopied ? 'copiado!' : 'copiar nome'}
-                  aria-label={`copiar ${t.title}`}
-                  className="shrink-0 p-1 text-zine-burntOrange/60 hover:text-zine-burntOrange dark:text-zine-cream/60 dark:hover:text-zine-cream transition-colors"
-                >
-                  {isCopied ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
+                  <button
+                    type="button"
+                    onClick={() => void copyTrack(t)}
+                    title={isCopied ? 'copiado!' : 'copiar nome'}
+                    aria-label={`copiar ${t.title}`}
+                    className="shrink-0 p-1 text-zine-burntOrange/60 hover:text-zine-burntOrange dark:text-zine-cream/60 dark:hover:text-zine-cream transition-colors"
+                  >
+                    {isCopied ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Voting emojis */}
+                  {votingEnabled && (
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleFavorite(t.id)}
+                        disabled={submitting}
+                        title="favorita"
+                        className={[
+                          'text-lg leading-none transition-transform',
+                          isFav ? 'scale-125' : 'opacity-40 hover:opacity-80',
+                        ].join(' ')}
+                      >
+                        {isFav ? '❤️' : '🤍'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleLeast(t.id)}
+                        disabled={submitting}
+                        title="menos gostei"
+                        className={[
+                          'text-lg leading-none transition-transform',
+                          isLeast ? 'scale-125' : 'opacity-40 hover:opacity-80',
+                        ].join(' ')}
+                      >
+                        {isLeast ? '💀' : '☠️'}
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
 
-                {/* Voting emojis */}
-                {votingEnabled && (
-                  <div className="flex gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleFavorite(t.id)}
-                      disabled={submitting}
-                      title="favorita"
-                      className={[
-                        'text-lg leading-none transition-transform',
-                        isFav ? 'scale-125' : 'opacity-40 hover:opacity-80',
-                      ].join(' ')}
-                    >
-                      {isFav ? '❤️' : '🤍'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleLeast(t.id)}
-                      disabled={submitting}
-                      title="menos gostei"
-                      className={[
-                        'text-lg leading-none transition-transform',
-                        isLeast ? 'scale-125' : 'opacity-40 hover:opacity-80',
-                      ].join(' ')}
-                    >
-                      {isLeast ? '💀' : '☠️'}
-                    </button>
+                {isOpen && (
+                  <div className="mt-1 mb-2 ml-9">
+                    <TrackLyrics track={t} artistCredit={artistCredit ?? null} />
                   </div>
                 )}
-              </div>
-
-              {isOpen && (
-                <div className="mt-1 mb-2 ml-9">
-                  <TrackLyrics track={t} artistCredit={artistCredit ?? null} />
-                </div>
-              )}
-            </li>
-          );
-        })}
+              </li>
+            );
+          })}
       </ol>
 
       {submitting && (
@@ -178,7 +180,7 @@ export const TrackList: React.FC<TrackListProps> = ({
           enviando voto…
         </p>
       )}
-    </ZineFrame>
+    </ZineFrameNoWobble>
   );
 };
 

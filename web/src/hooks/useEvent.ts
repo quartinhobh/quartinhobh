@@ -54,12 +54,17 @@ async function fetchEventData(
     };
     trks = ev.album.tracks;
   } else if (ev) {
-    const [albumData, tracksData] = await Promise.all([
-      fetchMusicBrainzAlbum(ev.mbAlbumId),
-      fetchMusicBrainzTracks(ev.mbAlbumId),
-    ]);
-    alb = albumData;
-    trks = tracksData.length > 0 ? tracksData : albumData.tracks;
+    try {
+      const [albumData, tracksData] = await Promise.all([
+        fetchMusicBrainzAlbum(ev.mbAlbumId),
+        fetchMusicBrainzTracks(ev.mbAlbumId),
+      ]);
+      alb = albumData;
+      trks = tracksData.length > 0 ? tracksData : albumData.tracks;
+    } catch {
+      // MusicBrainz lookup failed silently — maybe 404, maybe network error
+      // User still sees the event, just without album art/tracks
+    }
   }
 
   return { event: ev, album: alb, tracks: trks, initialRsvpSummary };
@@ -90,7 +95,14 @@ export function useEvent(eventId: string | null): UseEventResult {
       }
     };
 
-    void run();
+    // Se tem cache, mostra na hora e refetch ao fundo
+    if (cached) {
+      setLoading(false);
+      void run(); // Background refetch
+    } else {
+      void run();
+    }
+
     return () => {
       cancelled = true;
     };

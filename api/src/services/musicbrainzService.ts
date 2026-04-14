@@ -164,20 +164,31 @@ export async function searchReleases(
 export async function fetchReleaseGroupTracks(
   mbid: string,
 ): Promise<MusicBrainzTrack[]> {
-  const cacheKey = `rg-tracks:${mbid}`;
+  const cacheKey = `tracks:${mbid}`;
   const cached = cacheGet(cacheKey) as MusicBrainzTrack[] | undefined;
   if (cached) return cached;
 
-  const json = (await mbFetch(
-    `/release-group/${encodeURIComponent(mbid)}?inc=releases+media+recordings&fmt=json`,
-  )) as { releases?: MbReleaseJson[] };
-  const first = json.releases?.[0];
-  if (!first) return [];
-  // Need media on the actual release — re-fetch the release by id.
-  const release = (await mbFetch(
-    `/release/${encodeURIComponent(first.id)}?inc=recordings&fmt=json`,
-  )) as MbReleaseJson;
-  const tracks = extractTracks(release.media);
-  cacheSet(cacheKey, tracks);
-  return tracks;
+  // mbid can be either a release ID or release-group ID
+  // Try as release ID first (most common case from EventForm)
+  try {
+    const release = (await mbFetch(
+      `/release/${encodeURIComponent(mbid)}?inc=recordings&fmt=json`,
+    )) as MbReleaseJson;
+    const tracks = extractTracks(release.media);
+    cacheSet(cacheKey, tracks);
+    return tracks;
+  } catch {
+    // If it fails, try as release-group ID
+    const json = (await mbFetch(
+      `/release-group/${encodeURIComponent(mbid)}?inc=releases+media+recordings&fmt=json`,
+    )) as { releases?: MbReleaseJson[] };
+    const first = json.releases?.[0];
+    if (!first) return [];
+    const release = (await mbFetch(
+      `/release/${encodeURIComponent(first.id)}?inc=recordings&fmt=json`,
+    )) as MbReleaseJson;
+    const tracks = extractTracks(release.media);
+    cacheSet(cacheKey, tracks);
+    return tracks;
+  }
 }

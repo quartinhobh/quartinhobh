@@ -6,6 +6,7 @@ export interface ZineFrameProps {
   bg?: ZineBg;
   borderColor?: ZineBg;
   wobble?: boolean;
+  noFilter?: boolean;
   className?: string;
   children: React.ReactNode;
 }
@@ -28,10 +29,11 @@ const borderClassMap: Record<ZineBg, string> = {
   burntYellow: 'border-zine-burntYellow dark:border-zine-burntYellow-bright',
 };
 
-export const ZineFrame: React.FC<ZineFrameProps> = ({
+const ZineFrameBase: React.FC<ZineFrameProps> = ({
   bg = 'mint',
   borderColor = 'cream',
   wobble = false,
+  noFilter = false,
   className = '',
   children,
 }) => {
@@ -65,12 +67,20 @@ export const ZineFrame: React.FC<ZineFrameProps> = ({
         ]
           .filter(Boolean)
           .join(' ')}
-        style={{ filter: 'url(#zine-wobble)' }}
+        style={!noFilter ? { filter: 'url(#zine-wobble)' } : undefined}
       >
         {children}
       </div>
     </>
   );
 };
+
+export const ZineFrame: React.FC<ZineFrameProps> = (props) => (
+  <ZineFrameBase {...props} />
+);
+
+export const ZineFrameNoWobble: React.FC<Omit<ZineFrameProps, 'noFilter'>> = (props) => (
+  <ZineFrameBase {...props} noFilter />
+);
 
 export default ZineFrame;

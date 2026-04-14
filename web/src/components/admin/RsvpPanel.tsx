@@ -198,7 +198,6 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
 
   async function generatePdf(useTestData: boolean = false): Promise<void> {
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
       const eventsRes = await fetchEvents();
       const event = (eventsRes ?? []).find((e) => e.id === eventId);
 
@@ -285,15 +284,56 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
         </div>
       `;
 
-      const options = {
-        margin: 10,
-        filename: `Presença - ${event.title}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait' as const, unit: 'mm' as const, format: 'a4' as const },
-      };
+      // Converte HTML em canvas usando html2canvas
+      const htmlCanvasName = 'html2canvas';
+      const jsPdfName = 'jspdf';
+      const [html2canvasModule, jsPDFModule] = await Promise.all([
+        import(htmlCanvasName),
+        import(jsPdfName),
+      ]);
 
-      html2pdf().set(options).from(element).save();
+      const html2canvas = html2canvasModule.default || html2canvasModule;
+      const jsPDFClass = jsPDFModule.jsPDF || jsPDFModule.default;
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+
+      // Cria PDF com jsPDF
+      const pdf = new jsPDFClass({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Calcula dimensões da imagem para caber na página
+      const imgWidth = pdfWidth - 20; // 10mm margin em cada lado
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let position = 10; // margin top
+      let heightLeft = imgHeight;
+
+      // Primeira página
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      // Páginas adicionais se conteúdo exceder
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      // Salva o PDF
+      pdf.save(`Presença - ${event.title}.pdf`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Erro ao gerar PDF');
     }

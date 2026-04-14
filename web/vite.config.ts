@@ -8,6 +8,9 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(new Date().toISOString()),
   },
+  optimizeDeps: {
+    include: ['html2canvas', 'jspdf'],
+  },
   plugins: [
     react(),
     VitePWA({
@@ -119,6 +122,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    hmr: {
+      overlay: false,
+    },
   },
   build: {
     // P7-S1 — deterministic chunk split so vendors don't bloat the app chunk.
