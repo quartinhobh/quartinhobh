@@ -197,7 +197,7 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
     }
   }
 
-  async function generatePdf(useTestData: boolean = false): Promise<void> {
+  async function generatePdf(): Promise<void> {
     try {
       const eventsRes = await fetchEvents();
       const event = (eventsRes ?? []).find((e) => e.id === eventId);
@@ -205,35 +205,6 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
       if (!event) {
         alert('Evento não encontrado');
         return;
-      }
-
-      let confirmed = entries.filter((e) => e.status === 'confirmed');
-
-      // Dados de teste: 30 pessoas
-      if (useTestData) {
-        const testNames = [
-          'Arthur Abeilice', 'Roberto Silva', 'Teste User', 'João Santos', 'Maria Oliveira',
-          'Lucas Costa', 'Ana Paula', 'Felipe Martins', 'Beatriz Lima', 'Carlos Dias',
-          'Daniela Rocha', 'Eduardo Alves', 'Fernanda Gomes', 'Gabriel Santos', 'Helena Ferreira',
-          'Igor Mendes', 'Juliana Ribeiro', 'Kevin Silva', 'Larissa Costa', 'Mateus Oliveira',
-          'Natalia Santos', 'Otavio Lima', 'Patricia Dias', 'Quentin Martins', 'Raquel Silva',
-          'Samuel Costa', 'Tatiana Alves', 'Ulisses Gomes', 'Vanessa Ferreira', 'Wagner Mendes'
-        ];
-        const plusOneNames = ['Sofia Mendes', 'Camila Rocha', 'Isabela Costa', 'Mariana Silva', 'Fernanda Dias', 'Beatrice Santos'];
-        const now = Date.now();
-        confirmed = testNames.map((name, idx): AdminRsvpEntry => ({
-          entryKey: `test-${idx}`,
-          userId: `test-user-${idx}`,
-          avatarUrl: null,
-          authMode: 'guest',
-          displayName: name,
-          email: `${name.toLowerCase().replace(/\s+/g, '.')}@test.com`,
-          status: 'confirmed',
-          plusOne: idx % 5 === 0,
-          plusOneName: idx % 5 === 0 ? plusOneNames[idx % plusOneNames.length] : null,
-          createdAt: now,
-          updatedAt: now,
-        }));
       }
 
       // Fetch PDF from backend
