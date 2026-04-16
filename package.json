@@ -21,8 +21,9 @@
     "seed-extra": "METADATA_FLAVOR=none GCE_METADATA_HOST=0 FIREBASE_PROJECT_ID=quartinho-dev GCLOUD_PROJECT=quartinho-dev FIRESTORE_EMULATOR_HOST=localhost:8085 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 FIREBASE_DATABASE_EMULATOR_HOST=localhost:9000 FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199 bun --env-file=.env.seed api/scripts/seed-extra.ts"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "firebase-tools": "^13.15.0"
+    "@types/pdf-parse": "^1.1.5",
+    "firebase-tools": "^13.15.0",
+    "turbo": "^2.0.0"
   },
   "engines": {
     "node": ">=20"

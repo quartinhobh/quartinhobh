@@ -18,6 +18,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import pdfParse from 'pdf-parse';
 
 const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST;
 const MAILDEV_URL = process.env.MAILDEV_URL ?? 'http://127.0.0.1:1080';
@@ -507,10 +508,11 @@ describe.skipIf(SKIP)('RSVP Integration', () => {
     const pdfSignature = pdfBuffer.slice(0, 4).toString('ascii');
     expect(pdfSignature).toBe('%PDF');
 
-    // Verify content contains expected names
-    const pdfText = pdfBuffer.toString('latin1');
-    expect(pdfText).toContain('Alice');
-    expect(pdfText).toContain('Bob');
-    expect(pdfText).toContain('Diana');
+    // Extract and verify text content
+    const parsed = await pdfParse(pdfBuffer);
+    const text = parsed.text;
+    expect(text).toContain('Alice');
+    expect(text).toContain('Bob');
+    expect(text).toContain('Diana');
   });
 });
