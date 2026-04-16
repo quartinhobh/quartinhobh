@@ -733,7 +733,6 @@ export async function exportPdf(
 
   // ─── Attendees List (Bitter equivalent) ──────────
   const lineHeight = 5.5;
-  const subLineHeight = 4.5;
 
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
@@ -741,42 +740,24 @@ export async function exportPdf(
 
   let attendeeNumber = 1;
   confirmed.forEach((entry) => {
-    // Calculate height needed for this entry (name + email + instagram + newlines)
-    const extraLines = (entry.email ? 1 : 0) + (entry.instagram ? 1 : 0);
-    const entryHeight = lineHeight + extraLines * subLineHeight;
-
     // Check page break
-    if (yPos + entryHeight > pageHeight - margin - 15) {
+    if (yPos + lineHeight > pageHeight - margin - 15) {
       doc.addPage();
       yPos = margin;
     }
 
-    // Attendee name with number
+    // Build full line: "1. Name - email - instagram"
+    let fullLine = `${attendeeNumber}. ${entry.displayName}`;
+    if (entry.email) fullLine += ` - ${entry.email}`;
+    if (entry.instagram) fullLine += ` - @${entry.instagram}`;
+
+    // Attendee with contact info on same line
     doc.setFont('times', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(40, 40, 40);
-    const nameText = `${attendeeNumber}. ${entry.displayName}`;
-    doc.text(nameText, margin + 2, yPos);
+    doc.text(fullLine, margin + 2, yPos, { maxWidth: pageWidth - margin * 2 - 4 });
     yPos += lineHeight;
     attendeeNumber++;
-
-    // Email if present
-    if (entry.email) {
-      doc.setFont('times', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text(entry.email, margin + 6, yPos);
-      yPos += subLineHeight;
-    }
-
-    // Instagram if present
-    if (entry.instagram) {
-      doc.setFont('times', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text(`@${entry.instagram}`, margin + 6, yPos);
-      yPos += subLineHeight;
-    }
 
     // Plus-one if exists (as separate numbered entry)
     if (entry.plusOneName) {
