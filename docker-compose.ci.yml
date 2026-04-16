@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  firebase-emulator:
+    image: google/cloud-sdk:emulators
+    ports:
+      - "4400:4400"  # hub
+      - "8080:8080"  # firestore
+      - "9099:9099"  # auth
+      - "9000:9000"  # database
+      - "9199:9199"  # storage
+    environment:
+      - FIRESTORE_EMULATOR_HOST=0.0.0.0:8080
+      - FIREBASE_AUTH_EMULATOR_HOST=0.0.0.0:9099
+    command: >
+      firebase emulators:start
+      --only auth,firestore,database,storage
+      --project=quartinho-dev
+      --host=0.0.0.0
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      firebase-emulator:
+        condition: service_started
+    environment:
+      FIREBASE_PROJECT_ID: quartinho-dev
+      GCLOUD_PROJECT: quartinho-dev
+      FIRESTORE_EMULATOR_HOST: firebase-emulator:8080
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:9099
+      FIREBASE_DATABASE_EMULATOR_HOST: firebase-emulator:9000
+      FIREBASE_STORAGE_EMULATOR_HOST: firebase-emulator:9199
+    volumes:
+      - .:/workspace
