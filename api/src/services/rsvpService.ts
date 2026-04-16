@@ -13,6 +13,7 @@
 //   - `guest:${sha256(email)[0..32]}`  — anonymous submission
 
 import { createHash } from 'crypto';
+import jsPDF from 'jspdf';
 import { adminDb } from '../config/firebase';
 import type {
   Event,
@@ -680,4 +681,96 @@ export async function bulkImportRsvp(
   }
 
   return { imported, skipped };
+}
+
+/** Generate PDF with confirmed RSVPs for printing using Puppeteer */
+export async function exportPdf(
+  entries: AdminRsvpEntry[],
+  eventTitle: string,
+  eventDate: string,
+): Promise<Buffer> {
+  const confirmed = entries.filter((e) => e.status === 'confirmed');
+
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  // Page dimensions
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 16;
+  const contentWidth = pageWidth - 2 * margin;
+  let yPos = margin;
+
+  // ─── Title (Alfa Slab One equivalent) ────────────
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(26);
+  doc.setTextColor(40, 40, 40);
+  doc.text(eventTitle, margin, yPos);
+  yPos += 10;
+
+  // ─── Header Info (Bitter equivalent) ──────────────
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(120, 120, 120);
+  doc.text(
+    `${eventDate} · Quartinho | Confirmados: ${confirmed.length}`,
+    margin,
+    yPos,
+  );
+  yPos += 5;
+
+  // ─── Divider Line ────────────────────────────────
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
+  yPos += 5;
+
+  // ─── Attendees List (Bitter equivalent) ──────────
+  const lineHeight = 5.5;
+
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
+
+  let attendeeNumber = 1;
+  confirmed.forEach((entry) => {
+    // Check page break
+    if (yPos + lineHeight > pageHeight - margin - 15) {
+      doc.addPage();
+      yPos = margin;
+    }
+
+    // Attendee name with number
+    const nameText = `${attendeeNumber}. ${entry.displayName}`;
+    doc.text(nameText, margin + 2, yPos);
+    yPos += lineHeight;
+    attendeeNumber++;
+
+    // Plus-one if exists (as separate numbered entry, same font)
+    if (entry.plusOneName) {
+      if (yPos + lineHeight > pageHeight - margin - 15) {
+        doc.addPage();
+        yPos = margin;
+      }
+
+      const plusOneText = `${attendeeNumber}. ${entry.plusOneName}`;
+      doc.text(plusOneText, margin + 2, yPos);
+      yPos += lineHeight;
+      attendeeNumber++;
+    }
+  });
+
+  // ─── Footer ──────────────────────────────────────
+  yPos = pageHeight - 10;
+  doc.setFont('Helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  const footerText = `${new Date().toLocaleDateString('pt-BR')} · ${confirmed.length} confirmados`;
+  doc.text(footerText, pageWidth / 2, yPos, { align: 'center' });
+
+  // Return PDF as buffer
+  return Buffer.from(doc.output('arraybuffer'));
 }

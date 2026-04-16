@@ -67,31 +67,51 @@ async function ensureExtraUser(
     await ref.update({ role, updatedAt: Date.now() });
     console.log(`[seed-extra] user ${email} updated to role=${role}`);
     return existing.uid;
-  } catch {
-    // not found — create
+  } catch (err) {
+    // User not found — proceed to create
+    if (err instanceof Error && !err.message.includes('user-not-found')) {
+      // Unexpected error
+      console.warn(`[seed-extra] unexpected error checking user ${email}:`, err.message);
+    }
   }
-  const created = await adminAuth.createUser({
-    email,
-    password,
-    displayName,
-    emailVerified: true,
-  });
-  await adminDb.collection('users').doc(created.uid).set({
-    id: created.uid,
-    email,
-    displayName,
-    username: null,
-    role,
-    linkedSessionId: null,
-    avatarUrl: null,
-    bio: null,
-    socialLinks: [],
-    favoriteAlbums: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  });
-  console.log(`[seed-extra] created user ${email} role=${role}`);
-  return created.uid;
+
+  try {
+    const created = await adminAuth.createUser({
+      email,
+      password,
+      displayName,
+      emailVerified: true,
+    });
+    await adminDb.collection('users').doc(created.uid).set({
+      id: created.uid,
+      email,
+      displayName,
+      username: null,
+      role,
+      linkedSessionId: null,
+      avatarUrl: null,
+      bio: null,
+      socialLinks: [],
+      favoriteAlbums: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    console.log(`[seed-extra] created user ${email} role=${role}`);
+    return created.uid;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('email-already-exists')) {
+      console.log(`[seed-extra] user ${email} already exists, skipping`);
+      // Try to fetch and update the existing user
+      try {
+        const existing = await adminAuth.getUserByEmail(email);
+        await adminDb.collection('users').doc(existing.uid).update({ role, updatedAt: Date.now() });
+        return existing.uid;
+      } catch {
+        throw err; // Re-throw if we can't find/update
+      }
+    }
+    throw err;
+  }
 }
 
 async function fetchAlbumSnapshot(mbid: string): Promise<Event['album']> {

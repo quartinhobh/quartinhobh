@@ -28,7 +28,7 @@ import type {
   VoteTallies,
 } from '@/types';
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
 
 export interface CurrentUserResponse {
   userId: string;
@@ -1392,4 +1392,24 @@ export async function sendTestEmail(
     throw new Error(body.error ?? `POST /email/templates/${key}/test failed: ${res.status}`);
   }
   return (await res.json()) as { sentTo: string; sentAt: number };
+}
+
+export async function exportRsvpPdf(
+  eventId: string,
+  idToken: string,
+): Promise<Blob> {
+  const res = await fetch(
+    `${API_URL}/events/${encodeURIComponent(eventId)}/rsvp/admin/export-pdf`,
+    {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${idToken}` },
+    },
+  );
+  if (!res.ok) {
+    const errorBody = (await res.json().catch(() => ({}))) as { error?: string; details?: string };
+    throw new Error(
+      errorBody.details || errorBody.error || `Export PDF failed: ${res.status}`,
+    );
+  }
+  return res.blob();
 }
