@@ -697,82 +697,85 @@ export async function exportPdf(
     format: 'a4',
   });
 
-  // Constants for layout
+  // Page dimensions
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 20;
   const contentWidth = pageWidth - 2 * margin;
   let yPos = margin;
-  const lineHeight = 7;
 
-  // Set up fonts
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
+  // ─── Title ───────────────────────────────────────
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(24);
+  doc.setTextColor(51, 51, 51);
   doc.text(eventTitle, margin, yPos);
-  yPos += 12;
+  yPos += 14;
 
-  // Header info
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  // ─── Header Info ─────────────────────────────────
+  doc.setFont('Helvetica', 'normal');
+  doc.setFontSize(11);
   doc.setTextColor(100, 100, 100);
-  doc.text(
-    `${eventDate} · Quartinho | Confirmados: ${confirmed.length}`,
-    margin,
-    yPos,
-  );
-  yPos += 10;
+  doc.text(`${eventDate} · Quartinho`, margin, yPos);
+  yPos += 7;
 
-  // Draw separator line
-  doc.setDrawColor(200, 200, 200);
-  doc.line(margin, yPos, pageWidth - margin, yPos);
+  // Header with confirmed count
+  doc.setFontSize(10);
+  doc.setTextColor(150, 150, 150);
+  doc.text(`Confirmados: ${confirmed.length}`, margin, yPos);
   yPos += 8;
 
-  // List entries
-  doc.setFont('helvetica', 'normal');
+  // ─── Divider Line ────────────────────────────────
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
+  yPos += 10;
+
+  // ─── Attendees List ──────────────────────────────
+  const listStartY = yPos;
+  const lineHeight = 6.5;
+  const plusOneIndent = 8;
+
+  doc.setFont('Helvetica', 'normal');
   doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(40, 40, 40);
 
   confirmed.forEach((entry, idx) => {
-    const nameText = `${idx + 1}. ${entry.displayName}`;
-
-    // Check if we need a new page
-    if (yPos + lineHeight > pageHeight - margin) {
+    // Check page break
+    if (yPos + lineHeight > pageHeight - margin - 15) {
       doc.addPage();
       yPos = margin;
     }
 
+    // Attendee name with number
+    const nameText = `${idx + 1}. ${entry.displayName}`;
     doc.text(nameText, margin + 2, yPos);
     yPos += lineHeight;
 
-    // Add plus-one if exists
+    // Plus-one if exists
     if (entry.plusOneName) {
-      if (yPos + lineHeight > pageHeight - margin) {
+      if (yPos + lineHeight > pageHeight - margin - 15) {
         doc.addPage();
         yPos = margin;
       }
 
-      doc.setFont('helvetica', 'italic');
+      doc.setFont('Helvetica', 'italic');
       doc.setFontSize(9);
       doc.setTextColor(120, 120, 120);
-      doc.text(`+1: ${entry.plusOneName}`, margin + 10, yPos);
-      yPos += lineHeight;
-      doc.setFont('helvetica', 'normal');
+      doc.text(`  +1: ${entry.plusOneName}`, margin + plusOneIndent, yPos);
+      yPos += lineHeight - 0.5;
+      doc.setFont('Helvetica', 'normal');
       doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(40, 40, 40);
     }
   });
 
-  // Footer
-  yPos = pageHeight - margin - 10;
-  doc.setFont('helvetica', 'normal');
+  // ─── Footer ──────────────────────────────────────
+  yPos = pageHeight - margin - 8;
+  doc.setFont('Helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text(
-    `${new Date().toLocaleDateString('pt-BR')} · ${confirmed.length} confirmados`,
-    pageWidth / 2,
-    yPos,
-    { align: 'center' },
-  );
+  const footerText = `${new Date().toLocaleDateString('pt-BR')} · ${confirmed.length} confirmados`;
+  doc.text(footerText, pageWidth / 2, yPos, { align: 'center' });
 
   // Return PDF as buffer
   return Buffer.from(doc.output('arraybuffer'));
