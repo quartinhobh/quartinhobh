@@ -597,12 +597,13 @@ function csvField(value: string): string {
  *   - cancelled: RSVP cancelado
  */
 export function exportCsv(entries: AdminRsvpEntry[]): string {
-  const header = 'nome,email,status,plus_one,nome_acompanhante,auth_mode,data_rsvp';
+  const header = 'nome,email,instagram,status,plus_one,nome_acompanhante,auth_mode,data_rsvp';
   const rows = entries.map((e) => {
     const date = new Date(e.createdAt).toISOString();
     return [
       csvField(e.displayName),
       csvField(e.email ?? ''),
+      csvField(e.instagram ?? ''),
       csvField(e.status),
       csvField(e.plusOne ? 'sim' : 'não'),
       csvField(e.plusOneName ?? ''),
