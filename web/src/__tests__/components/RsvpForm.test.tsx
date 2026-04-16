@@ -19,8 +19,9 @@ import RsvpForm from '@/components/rsvp/RsvpForm';
 
 const submitMock = api.submitRsvpGuest as unknown as ReturnType<typeof vi.fn>;
 
-function fillAndSubmit(name = 'Ana', email = 'ana@x.com') {
-  fireEvent.change(screen.getByLabelText('nome'), { target: { value: name } });
+function fillAndSubmit(firstName = 'Ana', lastName = 'Silva', email = 'ana@x.com') {
+  fireEvent.change(screen.getByLabelText('nome'), { target: { value: firstName } });
+  fireEvent.change(screen.getByLabelText('sobrenome'), { target: { value: lastName } });
   fireEvent.change(screen.getByLabelText('email'), { target: { value: email } });
   fireEvent.click(screen.getByRole('button', { name: /confirmar presença/i }));
 }
@@ -33,6 +34,7 @@ describe('RsvpForm', () => {
   it('renders required inputs and submit button', () => {
     render(<GuestUpsellProvider><RsvpForm eventId="e1" isOpen onClose={() => {}} /></GuestUpsellProvider>);
     expect(screen.getByLabelText('nome')).toBeInTheDocument();
+    expect(screen.getByLabelText('sobrenome')).toBeInTheDocument();
     expect(screen.getByLabelText('email')).toBeInTheDocument();
     expect(screen.getByLabelText(/levar \+1/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /confirmar presença/i })).toBeInTheDocument();
@@ -66,7 +68,7 @@ describe('RsvpForm', () => {
     await waitFor(() => {
       expect(submitMock).toHaveBeenCalledWith('e1', expect.objectContaining({
         email: 'ana@x.com',
-        displayName: 'Ana',
+        displayName: 'Ana Silva',
       }));
     });
     const matches = await screen.findAllByText(/você está na lista/i);
