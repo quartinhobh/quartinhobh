@@ -713,22 +713,20 @@ export async function exportPdf(
 
   // ─── Header Info (Bitter equivalent) ──────────────
   doc.setFont('times', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`${eventDate} · Quartinho`, margin, yPos);
-  yPos += 7;
-
-  // Header with confirmed count
   doc.setFontSize(10);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Confirmados: ${confirmed.length}`, margin, yPos);
+  doc.setTextColor(120, 120, 120);
+  doc.text(
+    `${eventDate} · Quartinho | Confirmados: ${confirmed.length}`,
+    margin,
+    yPos,
+  );
   yPos += 8;
 
   // ─── Divider Line ────────────────────────────────
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(margin, yPos, pageWidth - margin, yPos);
-  yPos += 10;
+  yPos += 7;
 
   // ─── Attendees List (Bitter equivalent) ──────────
   const lineHeight = 6.5;
