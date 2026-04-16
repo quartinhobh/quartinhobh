@@ -12,6 +12,7 @@ import {
   adminCancelRsvp,
   moveRsvpToWaitlist,
   fetchEvents,
+  exportRsvpPdf,
 } from '@/services/api';
 import type { AdminRsvpEntry, RsvpStatus } from '@/types';
 
@@ -240,27 +241,7 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
         throw new Error('Token de autenticação não disponível. Faça login novamente.');
       }
 
-      const response = await fetch(`/events/${eventId}/rsvp/admin/export-pdf`, {
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        let errorMsg = 'Erro ao gerar PDF';
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.error || errorData.message || errorMsg;
-          if (errorData.details) {
-            errorMsg += `: ${errorData.details}`;
-          }
-        } catch {
-          errorMsg += ` (HTTP ${response.status})`;
-        }
-        throw new Error(errorMsg);
-      }
-
-      const blob = await response.blob();
+      const blob = await exportRsvpPdf(eventId, idToken);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
