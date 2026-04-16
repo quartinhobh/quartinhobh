@@ -751,22 +751,16 @@ export async function exportPdf(
     yPos += lineHeight;
     attendeeNumber++;
 
-    // Plus-one if exists (as separate numbered entry)
+    // Plus-one if exists (as separate numbered entry, same font)
     if (entry.plusOneName) {
       if (yPos + lineHeight > pageHeight - margin - 15) {
         doc.addPage();
         yPos = margin;
       }
 
-      doc.setFont('times', 'italic');
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
       const plusOneText = `${attendeeNumber}. ${entry.plusOneName}`;
       doc.text(plusOneText, margin + 2, yPos);
-      yPos += lineHeight - 0.5;
-      doc.setFont('times', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
+      yPos += lineHeight;
       attendeeNumber++;
     }
   });
