@@ -78,26 +78,51 @@ describe('EventDetail page', () => {
     (fetchPhotos as Mock).mockResolvedValue(photos);
   });
 
-  it('renders album, tracks, votes, and category1 photos by default', async () => {
+  it('renders album and tabs by default', async () => {
     render(<EventDetail eventId="e1" />);
     await waitFor(() => {
       expect(screen.getByText('Some Album')).toBeInTheDocument();
     });
     expect(screen.getAllByText('Track One').length).toBeGreaterThan(0);
-    expect(screen.getByLabelText('vote-results')).toBeInTheDocument();
-    // category1 tab active, shows p1 only
-    expect(screen.getByAltText('photo-p1')).toBeInTheDocument();
-    expect(screen.queryByAltText('photo-p2')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Músicas' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Votos' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Fotos' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Comentários' })).toBeInTheDocument();
   });
 
-  it('switches to category2 tab and shows other photos', async () => {
+  it('shows tracks by default (Músicas tab active)', async () => {
     render(<EventDetail eventId="e1" />);
     await waitFor(() => {
-      expect(screen.getByAltText('photo-p1')).toBeInTheDocument();
+      expect(screen.getByText('Some Album')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByLabelText('tab-category2'));
-    expect(screen.getByAltText('photo-p2')).toBeInTheDocument();
-    expect(screen.queryByAltText('photo-p1')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('tracks')).toBeInTheDocument();
+  });
+
+  it('switches to votes tab and shows vote results', async () => {
+    render(<EventDetail eventId="e1" />);
+    await waitFor(() => {
+      expect(screen.getByText('Some Album')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('tab', { name: 'Votos' }));
+    expect(screen.getByLabelText('vote-results')).toBeInTheDocument();
+  });
+
+  it('switches to photos tab and shows photo gallery', async () => {
+    render(<EventDetail eventId="e1" />);
+    await waitFor(() => {
+      expect(screen.getByText('Some Album')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('tab', { name: 'Fotos' }));
+    expect(screen.getByAltText('photo-p1')).toBeInTheDocument();
+  });
+
+  it('switches to comments tab and shows placeholder', async () => {
+    render(<EventDetail eventId="e1" />);
+    await waitFor(() => {
+      expect(screen.getByText('Some Album')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('tab', { name: 'Comentários' }));
+    expect(screen.getByText('Em breve!')).toBeInTheDocument();
   });
 
   it('shows loading state before event resolves', () => {

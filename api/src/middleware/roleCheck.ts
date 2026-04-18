@@ -14,9 +14,7 @@ export function requireRole(
       return;
     }
     try {
-      const snap = await adminDb.collection('users').doc(req.user.uid).get();
-      const data = snap.data() as { role?: UserRole } | undefined;
-      const role = data?.role;
+      const role = await getRole(req.user.uid);
       if (!role || !roles.includes(role)) {
         res.status(403).json({ error: 'forbidden' });
         return;
@@ -26,4 +24,10 @@ export function requireRole(
       res.status(500).json({ error: 'role_lookup_failed' });
     }
   };
+}
+
+export async function getRole(uid: string): Promise<UserRole | null> {
+  const snap = await adminDb.collection('users').doc(uid).get();
+  const data = snap.data() as { role?: UserRole } | undefined;
+  return data?.role ?? null;
 }

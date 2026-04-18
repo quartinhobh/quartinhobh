@@ -17,6 +17,7 @@ import { bannersRouter } from './routes/banners';
 import { stickerConfigRouter } from './routes/stickerConfig';
 import { userStatsRouter } from './routes/userStats';
 import { chatRouter } from './routes/chat';
+import { commentsRouter } from './routes/comments';
 import { startEmailScheduler } from './jobs/emailScheduler';
 
 const app = express();
@@ -66,6 +67,7 @@ app.use('/banners', bannersRouter);
 app.use('/sticker-config', stickerConfigRouter);
 app.use('/user-stats', userStatsRouter);
 app.use('/chat', chatRouter);
+app.use('/comments', commentsRouter);
 
 if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'preflight') {
   app.listen(PORT, () => {

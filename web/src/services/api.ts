@@ -3,6 +3,8 @@ import type {
   Ban,
   Banner,
   BannerRoute,
+  Comment,
+  CommentWithUser,
   EmailTemplate,
   EmailTemplateKey,
   Event,
@@ -1412,4 +1414,40 @@ export async function exportRsvpPdf(
     );
   }
   return res.blob();
+}
+
+export async function fetchComments(eventId: string): Promise<CommentWithUser[]> {
+  const res = await fetch(`${API_URL}/comments/${encodeURIComponent(eventId)}`);
+  if (!res.ok) throw new Error(`GET /comments/${eventId} failed: ${res.status}`);
+  const body = (await res.json()) as { comments: CommentWithUser[] };
+  return body.comments;
+}
+
+export async function postComment(
+  eventId: string,
+  content: string,
+  idToken: string,
+): Promise<Comment> {
+  const res = await fetch(`${API_URL}/comments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ eventId, content }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `POST /comments failed: ${res.status}`);
+  }
+  const body = (await res.json()) as { comment: Comment };
+  return body.comment;
+}
+
+export async function deleteComment(commentId: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /comments/${commentId} failed: ${res.status}`);
 }

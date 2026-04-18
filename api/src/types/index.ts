@@ -369,3 +369,20 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
 }
+
+export interface Comment {
+  id: string;
+  eventId: string;
+  userId: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CommentWithUser extends Comment {
+  user: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+}

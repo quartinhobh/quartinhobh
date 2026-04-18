@@ -341,6 +341,23 @@ export interface PaginatedResponse<T> {
   limit: number;
 }
 
+export interface Comment {
+  id: string;
+  eventId: string;
+  userId: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CommentWithUser extends Comment {
+  user: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+}
+
 // ── Frontend-only shapes ───────────────────────────────────────────────
 
 export interface MusicBrainzTrack {

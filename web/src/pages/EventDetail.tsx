@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import ZineFrame from '@/components/common/ZineFrame';
+import Button from '@/components/common/Button';
 import { EventDetailSkeleton } from '@/components/common/LoadingState';
 import AlbumDisplay from '@/components/events/AlbumDisplay';
 import TrackList from '@/components/events/TrackList';
 import VoteResults from '@/components/voting/VoteResults';
+import PhotoGallery from '@/components/events/PhotoGallery';
+import CommentsSection from '@/components/events/CommentsSection';
 import {
   fetchEventById,
   fetchMusicBrainzAlbum,
@@ -14,9 +17,10 @@ import type {
   Event,
   MusicBrainzRelease,
   Photo,
-  PhotoCategory,
   VoteTallies,
 } from '@/types';
+
+type Tab = 'tracks' | 'votes' | 'photos' | 'comments';
 
 export interface EventDetailProps {
   eventId: string;
@@ -31,7 +35,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
   const [album, setAlbum] = useState<MusicBrainzRelease | null>(null);
   const [tallies, setTallies] = useState<VoteTallies | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [tab, setTab] = useState<PhotoCategory>('category1');
+  const [tab, setTab] = useState<Tab>('tracks');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,65 +94,49 @@ export const EventDetail: React.FC<EventDetailProps> = ({ eventId }) => {
     return <EventDetailSkeleton />;
   }
 
-  const visible = photos.filter((p) => p.category === tab);
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'tracks', label: 'Músicas' },
+    { key: 'votes', label: 'Votos' },
+    { key: 'photos', label: 'Fotos' },
+    { key: 'comments', label: 'Comentários' },
+  ];
 
   return (
     <div className="flex flex-col gap-4">
       <AlbumDisplay event={event} album={album} coverUrl={event.album?.coverUrl} />
-      <TrackList tracks={album?.tracks ?? []} artistCredit={album?.artistCredit} />
-      <VoteResults tallies={tallies} tracks={album?.tracks ?? []} />
 
-      {photos.length > 0 && (
-        <ZineFrame bg="periwinkle" borderColor="cream">
-          <h2 className="font-display text-2xl text-zine-cream mb-3">Fotos</h2>
-          <div
-            role="tablist"
-            aria-label="photo-categories"
-            className="flex gap-2 mb-3"
+      <div
+        role="tablist"
+        aria-label="event-tabs"
+        className="flex flex-wrap gap-1.5"
+      >
+        {tabs.map(({ key, label }) => (
+          <Button
+            key={key}
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={tab === key ? 'ring-4 ring-zine-burntOrange' : ''}
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'category1'}
-              aria-label="tab-category1"
-              onClick={() => setTab('category1')}
-              className={`font-body px-3 py-1 border-4 border-zine-cream ${
-                tab === 'category1'
-                  ? 'bg-zine-burntYellow text-zine-cream'
-                  : 'bg-zine-periwinkle text-zine-cream'
-              }`}
-            >
-              Fotos do evento
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'category2'}
-              aria-label="tab-category2"
-              onClick={() => setTab('category2')}
-              className={`font-body px-3 py-1 border-4 border-zine-cream ${
-                tab === 'category2'
-                  ? 'bg-zine-burntYellow text-zine-cream'
-                  : 'bg-zine-periwinkle text-zine-cream'
-              }`}
-            >
-              Playlist
-            </button>
-          </div>
-          <div
-            aria-label="photo-mosaic"
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
-          >
-            {visible.map((p) => (
-              <img
-                key={p.id}
-                src={p.url}
-                alt={`photo-${p.id}`}
-                className="w-full h-32 object-cover border-4 border-zine-cream"
-              />
-            ))}
-          </div>
-        </ZineFrame>
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      {tab === 'tracks' && (
+        <TrackList tracks={album?.tracks ?? []} artistCredit={album?.artistCredit} />
+      )}
+
+      {tab === 'votes' && (
+        <VoteResults tallies={tallies} tracks={album?.tracks ?? []} />
+      )}
+
+      {tab === 'photos' && (
+        <PhotoGallery photos={photos} />
+      )}
+
+      {tab === 'comments' && (
+        <CommentsSection eventId={event.id} />
       )}
     </div>
   );
