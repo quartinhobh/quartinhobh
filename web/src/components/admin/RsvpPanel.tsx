@@ -405,6 +405,15 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
   const selectedApprovable = selectedEntries.filter(
     (e) => e.status === 'pending_approval' || e.status === 'waitlisted',
   );
+  const selectedRejectable = selectedEntries.filter(
+    (e) => e.status === 'pending_approval',
+  );
+  const selectedWaitlistable = selectedEntries.filter(
+    (e) => e.status === 'confirmed',
+  );
+  const selectedRemovable = selectedEntries.filter(
+    (e) => e.status !== 'cancelled' && e.status !== 'rejected',
+  );
   const selectedSeats = selectedApprovable.reduce((s, e) => s + seatsOf(e), 0);
   const overCapacity =
     capacity !== null && confirmedSeats + selectedSeats > capacity;
@@ -434,6 +443,73 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
     setBulkBusy(false);
     setSelected(new Set());
     alert(`${ok}/${selectedApprovable.length} aprovados`);
+  }
+
+  async function handleBulkReject(): Promise<void> {
+    if (!selectedRejectable.length) return;
+    if (!window.confirm(`recusar ${selectedRejectable.length}?`)) return;
+    setBulkBusy(true);
+    const keys = new Set(selectedRejectable.map((e) => e.entryKey));
+    setEntries((prev) =>
+      prev.map((e) => (keys.has(e.entryKey) ? { ...e, status: 'rejected' } : e))
+    );
+    let ok = 0;
+    for (const entry of selectedRejectable) {
+      try {
+        await approveRejectRsvp(eventId, entry.entryKey, 'rejected', idToken);
+        ok += 1;
+      } catch {
+        // swallow
+      }
+    }
+    if (ok < selectedRejectable.length) await load();
+    setBulkBusy(false);
+    setSelected(new Set());
+    alert(`${ok}/${selectedRejectable.length} recusados`);
+  }
+
+  async function handleBulkWaitlist(): Promise<void> {
+    if (!selectedWaitlistable.length) return;
+    if (!window.confirm(`mover ${selectedWaitlistable.length} para fila?`)) return;
+    setBulkBusy(true);
+    const keys = new Set(selectedWaitlistable.map((e) => e.entryKey));
+    setEntries((prev) =>
+      prev.map((e) => (keys.has(e.entryKey) ? { ...e, status: 'waitlisted' } : e))
+    );
+    let ok = 0;
+    for (const entry of selectedWaitlistable) {
+      try {
+        await moveRsvpToWaitlist(idToken, eventId, entry.entryKey);
+        ok += 1;
+      } catch {
+        // swallow
+      }
+    }
+    if (ok < selectedWaitlistable.length) await load();
+    setBulkBusy(false);
+    setSelected(new Set());
+    alert(`${ok}/${selectedWaitlistable.length} movidos para fila`);
+  }
+
+  async function handleBulkRemove(): Promise<void> {
+    if (!selectedRemovable.length) return;
+    if (!window.confirm(`remover ${selectedRemovable.length}? esta ação não pode ser desfeita.`)) return;
+    setBulkBusy(true);
+    const keys = new Set(selectedRemovable.map((e) => e.entryKey));
+    setEntries((prev) => prev.filter((e) => !keys.has(e.entryKey)));
+    let ok = 0;
+    for (const entry of selectedRemovable) {
+      try {
+        await adminCancelRsvp(idToken, eventId, entry.entryKey);
+        ok += 1;
+      } catch {
+        // swallow
+      }
+    }
+    if (ok < selectedRemovable.length) await load();
+    setBulkBusy(false);
+    setSelected(new Set());
+    alert(`${ok}/${selectedRemovable.length} removidos`);
   }
 
   const allVisibleSelected =
@@ -669,12 +745,12 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
                 checked={allVisibleSelected}
                 onChange={toggleAllVisible}
               />
-              <span className="font-body text-sm text-zine-burntOrange/70">Selecionar tudo</span>
+              <span className="font-body text-sm text-zine-burntOrange/70 dark:text-zine-cream/70">Selecionar tudo</span>
             </div>
             {visible.map((entry) => (
               <div
                 key={entry.entryKey}
-                className="border-2 border-zine-burntOrange p-3 bg-zine-cream/50"
+                className="border-2 border-zine-burntOrange dark:border-zine-burntOrange-bright p-3 bg-zine-cream/50 dark:bg-zine-surface-dark"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-start gap-2 flex-1">
@@ -686,14 +762,14 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
                       className="mt-1"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-display font-bold text-zine-burntOrange truncate">
+                      <p className="font-display font-bold text-zine-burntOrange dark:text-zine-cream truncate">
                         {entry.displayName}
                       </p>
-                      <p className="font-body text-xs text-zine-burntOrange/70 truncate">
+                      <p className="font-body text-xs text-zine-burntOrange/70 dark:text-zine-cream/70 truncate">
                         {entry.email ?? '—'}
                       </p>
                       {entry.instagram && (
-                        <p className="font-body text-xs text-zine-burntOrange/70 truncate">
+                        <p className="font-body text-xs text-zine-burntOrange/70 dark:text-zine-cream/70 truncate">
                           @{entry.instagram}
                         </p>
                       )}
@@ -704,30 +780,30 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
                 <div className="flex flex-wrap gap-2 mb-2">
                   <span className={`inline-block px-2 py-0.5 text-xs border font-body ${
                     entry.status === 'confirmed'
-                      ? 'border-zine-mint bg-zine-mint/20'
+                      ? 'border-zine-mint dark:border-zine-mint-dark bg-zine-mint/20 dark:bg-zine-mint-dark/30 text-zine-burntOrange dark:text-zine-mint'
                       : entry.status === 'waitlisted'
-                        ? 'border-zine-burntYellow bg-zine-burntYellow/20'
+                        ? 'border-zine-burntYellow dark:border-zine-burntYellow-bright bg-zine-burntYellow/20 dark:bg-zine-burntYellow-bright/20 text-zine-burntOrange dark:text-zine-burntYellow-bright'
                         : entry.status === 'pending_approval'
-                          ? 'border-zine-periwinkle bg-zine-periwinkle/20'
-                          : 'border-zine-burntOrange/40 bg-zine-burntOrange/10'
+                          ? 'border-zine-periwinkle dark:border-zine-periwinkle-dark bg-zine-periwinkle/20 dark:bg-zine-periwinkle-dark/30 text-zine-burntOrange dark:text-zine-periwinkle'
+                          : 'border-zine-burntOrange/40 dark:border-zine-cream/30 bg-zine-burntOrange/10 dark:bg-zine-cream/10 text-zine-burntOrange dark:text-zine-cream'
                   }`}>
                     {STATUS_LABELS[entry.status]}
                   </span>
                   <span className={`inline-block px-2 py-0.5 text-xs border font-body ${
                     entry.authMode === 'firebase'
-                      ? 'border-zine-burntOrange bg-zine-burntOrange/20 text-zine-burntOrange'
-                      : 'border-zine-mint bg-zine-mint/30 text-zine-burntOrange'
+                      ? 'border-zine-burntOrange dark:border-zine-burntOrange-bright bg-zine-burntOrange/20 dark:bg-zine-burntOrange-bright/20 text-zine-burntOrange dark:text-zine-burntOrange-bright'
+                      : 'border-zine-mint dark:border-zine-mint-dark bg-zine-mint/30 dark:bg-zine-mint-dark/30 text-zine-burntOrange dark:text-zine-mint'
                   }`}>
                     {entry.authMode === 'firebase' ? 'conta' : 'convidado'}
                   </span>
                   {entry.plusOne && (
-                    <span className="inline-block px-2 py-0.5 text-xs border border-zine-burntOrange/40 font-body text-zine-burntOrange/70">
+                    <span className="inline-block px-2 py-0.5 text-xs border border-zine-burntOrange/40 dark:border-zine-cream/30 font-body text-zine-burntOrange/70 dark:text-zine-cream/70">
                       +1: {entry.plusOneName ?? 'sim'}
                     </span>
                   )}
                 </div>
 
-                <div className="font-body text-xs text-zine-burntOrange/60 mb-2">
+                <div className="font-body text-xs text-zine-burntOrange/60 dark:text-zine-cream/60 mb-2">
                   {new Date(entry.createdAt).toLocaleDateString('pt-BR')}
                 </div>
 
@@ -756,7 +832,7 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
                         type="button"
                         disabled={!!actionBusy}
                         onClick={() => void handleRemove(entry.entryKey)}
-                        className="flex-1 underline text-xs text-zine-burntOrange disabled:opacity-50 font-body py-1"
+                        className="flex-1 underline text-xs text-zine-burntOrange dark:text-zine-cream disabled:opacity-50 font-body py-1"
                       >
                         {actionBusy === entry.entryKey + 'remove' ? '…' : 'remover'}
                       </button>
@@ -764,7 +840,7 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
                         type="button"
                         disabled={!!actionBusy}
                         onClick={() => void handleMoveToWaitlist(entry.entryKey)}
-                        className="flex-1 underline text-xs text-zine-burntOrange disabled:opacity-50 font-body py-1"
+                        className="flex-1 underline text-xs text-zine-burntOrange dark:text-zine-cream disabled:opacity-50 font-body py-1"
                       >
                         {actionBusy === entry.entryKey + 'waitlist' ? '…' : '→ fila'}
                       </button>
@@ -778,24 +854,49 @@ export const RsvpPanel: React.FC<RsvpPanelProps> = ({ eventId, idToken }) => {
       )}
 
       {selected.size > 0 && (
-        <div className="fixed bottom-4 right-4 bg-zine-cream border-2 border-zine-burntOrange p-3 shadow-lg font-body text-sm text-zine-burntOrange z-40">
+        <div className="fixed bottom-4 right-4 max-w-[calc(100vw-2rem)] bg-zine-cream dark:bg-zine-surface-dark border-2 border-zine-burntOrange dark:border-zine-burntOrange-bright p-3 shadow-lg font-body text-sm text-zine-burntOrange dark:text-zine-cream z-40">
           <div className="mb-2">
             {selected.size} selecionado{selected.size !== 1 ? 's' : ''}
-            {selectedApprovable.length !== selected.size && (
-              <span className="opacity-60"> · {selectedApprovable.length} aprovável{selectedApprovable.length !== 1 ? 'eis' : ''}</span>
-            )}
           </div>
           {overCapacity && (
-            <div className="text-xs text-zine-burntOrange mb-2">
+            <div className="text-xs text-zine-burntOrange dark:text-zine-burntOrange-bright mb-2">
               aviso: excede capacidade ({confirmedSeats + selectedSeats}/{capacity})
             </div>
           )}
-          <Button
-            disabled={bulkBusy || selectedApprovable.length === 0}
-            onClick={() => void handleBulkApprove()}
-          >
-            {bulkBusy ? '…' : `aprovar ${selectedApprovable.length} selecionado${selectedApprovable.length !== 1 ? 's' : ''}`}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {selectedApprovable.length > 0 && (
+              <Button
+                disabled={bulkBusy}
+                onClick={() => void handleBulkApprove()}
+              >
+                {bulkBusy ? '…' : `aprovar (${selectedApprovable.length})`}
+              </Button>
+            )}
+            {selectedRejectable.length > 0 && (
+              <Button
+                disabled={bulkBusy}
+                onClick={() => void handleBulkReject()}
+              >
+                {bulkBusy ? '…' : `recusar (${selectedRejectable.length})`}
+              </Button>
+            )}
+            {selectedWaitlistable.length > 0 && (
+              <Button
+                disabled={bulkBusy}
+                onClick={() => void handleBulkWaitlist()}
+              >
+                {bulkBusy ? '…' : `→ fila (${selectedWaitlistable.length})`}
+              </Button>
+            )}
+            {selectedRemovable.length > 0 && (
+              <Button
+                disabled={bulkBusy}
+                onClick={() => void handleBulkRemove()}
+              >
+                {bulkBusy ? '…' : `remover (${selectedRemovable.length})`}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
