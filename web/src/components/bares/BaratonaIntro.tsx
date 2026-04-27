@@ -11,18 +11,18 @@ export const BaratonaIntro: React.FC<BaratonaIntroProps> = ({ variant = 'full' }
       🍻{' '}
       {variant === 'full' ? (
         <>
-          o quartinho é itinerante — toda edição rola num lugar diferente. tamo
-          organizando uma <strong className="not-italic">baratona</strong> pra descobrir bares
+          o quartinho é itinerante — toda edição rola num lugar diferente. Estamos
+          organizando uma "<strong className="not-italic">baratona</strong>" pra descobrir locais
           novos que combinem com a vibe. quer ajudar?{' '}
-          <Link to="/novo-bar" className="underline font-bold not-italic hover:text-zine-burntOrange">
-            indica um bar
+          <Link to="/novo-local" className="underline font-bold not-italic hover:text-zine-burntOrange">
+            indica um local
           </Link>{' '}
-          que voce curte, ou ja foi em algum dos indicados? deixa seu feedback (❤️ / 💀 + comentário) clicando em "ver e votar →" no card.
+          que voce curte, ou se já foi em algum dos indicados? deixa seu feedback (❤️ / 💀 + comentário) clicando em "ver comentários →" no card.
         </>
       ) : (
         <>
-          indica um bar pra baratona — sua sugestão ajuda a gente a achar lugares novos. ja foi em algum?{' '}
-          <Link to="/bares" className="underline font-bold not-italic hover:text-zine-burntOrange">
+          indica um local pra baratona — sua sugestão ajuda a gente a achar lugares novos. ja foi em algum?{' '}
+          <Link to="/locais" className="underline font-bold not-italic hover:text-zine-burntOrange">
             ajuda avaliando
           </Link>.
         </>

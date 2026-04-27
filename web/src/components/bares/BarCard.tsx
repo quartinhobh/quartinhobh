@@ -89,7 +89,7 @@ export const BarCard: React.FC<BarCardProps> = ({
             trailingAction={
               !asDetail && (
                 <Link
-                  to={`/bar/${bar.id}`}
+                  to={`/local/${bar.id}`}
                   className="font-body text-sm font-bold text-zine-burntOrange underline hover:text-zine-burntOrange/70 min-h-[44px] flex items-center"
                 >
                   ver comentários →

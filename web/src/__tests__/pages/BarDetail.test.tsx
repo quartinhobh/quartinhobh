@@ -58,11 +58,11 @@ const mockBar: PublicBarSuggestion = {
   updatedAt: 1000,
 };
 
-function renderBarDetail(path = '/bar/abc123') {
+function renderBarDetail(path = '/local/abc123') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/bar/:id" element={<BarDetail />} />
+        <Route path="/local/:id" element={<BarDetail />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -92,10 +92,10 @@ describe('BarDetail page', () => {
     );
   });
 
-  it('shows "bar nao encontrado" when notFound=true', () => {
+  it('shows "local nao encontrado" when notFound=true', () => {
     useBarDetailMock.mockReturnValue({ bar: null, loading: false, notFound: true, error: null });
     renderBarDetail();
-    expect(screen.getByText(/bar nao encontrado/i)).toBeInTheDocument();
+    expect(screen.getByText(/local nao encontrado/i)).toBeInTheDocument();
   });
 
   it('shows loading state when loading=true', () => {

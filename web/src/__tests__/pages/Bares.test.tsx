@@ -80,13 +80,13 @@ beforeEach(() => {
 });
 
 describe('Bares page', () => {
-  it('renders heading "bares"', () => {
+  it('renders heading "locais"', () => {
     render(
       <MemoryRouter>
         <Bares />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('heading', { name: /bares/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /locais/i })).toBeInTheDocument();
   });
 
   it('renders bar cards for each bar in mock data', async () => {
@@ -101,7 +101,7 @@ describe('Bares page', () => {
     });
   });
 
-  it('each card contains a "ver detalhes" link to /bar/:id', async () => {
+  it('each card contains a "ver detalhes" link to /local/:id', async () => {
     render(
       <MemoryRouter>
         <Bares />
@@ -109,17 +109,17 @@ describe('Bares page', () => {
     );
     await waitFor(() => {
       const links = screen.getAllByRole('link');
-      const barLinks = links.filter((l) => l.getAttribute('href')?.startsWith('/bar/'));
-      expect(barLinks.length).toBeGreaterThanOrEqual(2);
+      const localLinks = links.filter((l) => l.getAttribute('href')?.startsWith('/local/'));
+      expect(localLinks.length).toBeGreaterThanOrEqual(2);
     });
   });
 
-  it('"indicar bar" button is present', () => {
+  it('"indicar local" button is present', () => {
     render(
       <MemoryRouter>
         <Bares />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('button', { name: /indicar bar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /indicar local/i })).toBeInTheDocument();
   });
 });

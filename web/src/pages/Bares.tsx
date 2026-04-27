@@ -14,13 +14,13 @@ export default function Bares() {
   const [loginOpen, setLoginOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl text-zine-burntOrange">bares</h1>
+    <div className="flex flex-col gap-4" style={{ filter: 'url(#zine-wobble)' }}>
+      <h1 className="font-display text-3xl text-zine-burntOrange" style={{ filter: 'url(#zine-wobble)' }}>locais</h1>
 
       <BaratonaIntro variant="full" />
 
-      <Button className="w-full" onClick={() => navigate('/novo-bar')}>
-        indicar bar
+      <Button className="w-full" onClick={() => navigate('/novo-local')}>
+        indicar local
       </Button>
 
       <BarList

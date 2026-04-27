@@ -40,7 +40,7 @@ export interface AdminPanelProps {
   idToken?: string | null;
 }
 
-type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'chat' | 'linktree' | 'banners' | 'stickers' | 'presenca' | 'bares' | 'discos';
+type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'chat' | 'linktree' | 'banners' | 'stickers' | 'presenca' | 'locais' | 'discos';
 
 function getCategoryLabel(category: PhotoCategory): string {
   const labels: Record<PhotoCategory, string> = {
@@ -59,7 +59,7 @@ function getCategoryLabel(category: PhotoCategory): string {
  */
 function getHashTab(): Tab {
   const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'chat', 'linktree', 'banners', 'stickers', 'presenca', 'bares', 'discos'];
+  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'chat', 'linktree', 'banners', 'stickers', 'presenca', 'locais', 'discos'];
   return valid.includes(hash as Tab) ? (hash as Tab) : 'events';
 }
 
@@ -181,7 +181,7 @@ const AdminPanelInner: React.FC = () => {
     { key: 'banners', label: 'Banners' },
     { key: 'stickers', label: 'Stickers' },
     { key: 'presenca', label: 'Presença' },
-    { key: 'bares', label: 'Bares' },
+    { key: 'locais', label: 'Locais' },
     { key: 'discos', label: 'Discos' },
   ];
 
@@ -239,7 +239,7 @@ const AdminPanelInner: React.FC = () => {
       {tab === 'banners' && <BannerPanel />}
       {tab === 'stickers' && <StickerPanel />}
       {tab === 'presenca' && <PresencaTab idToken={idToken} />}
-      {tab === 'bares' && <BarSuggestionsPanel idToken={idToken ?? ''} />}
+      {tab === 'locais' && <BarSuggestionsPanel idToken={idToken ?? ''} />}
       {tab === 'discos' && <AlbumSuggestionsPanel idToken={idToken ?? ''} />}
       <CanShow />
       <p className="text-right">

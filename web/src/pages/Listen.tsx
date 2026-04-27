@@ -68,6 +68,7 @@ export const Listen: React.FC = () => {
         <Link
           to="/archive"
           className="font-body font-bold italic text-center text-zine-burntYellow underline"
+          style={{ filter: 'url(#zine-wobble)' }}
         >
           ver eventos passados →
         </Link>
@@ -206,6 +207,7 @@ export const Listen: React.FC = () => {
       <Link
         to="/archive"
         className="font-body font-bold italic text-center text-zine-burntYellow underline"
+        style={{ filter: 'url(#zine-wobble)' }}
       >
         ver eventos passados →
       </Link>

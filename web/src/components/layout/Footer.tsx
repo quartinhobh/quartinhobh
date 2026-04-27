@@ -10,7 +10,7 @@ export const Footer: React.FC = () => {
           <Link to="/links" className="underline hover:text-zine-burntYellow py-1">
             links
           </Link>
-          <Link to="/novo-bar" className="underline hover:text-zine-burntYellow py-1">
+          <Link to="/novo-local" className="underline hover:text-zine-burntYellow py-1">
             sugestao de local
           </Link>
           <Link to="/sugerir-disco" className="underline hover:text-zine-burntYellow py-1">

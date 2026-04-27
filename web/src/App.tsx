@@ -88,9 +88,9 @@ function MainContent({ idToken }: { idToken: string | null }) {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin idToken={idToken} />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/bares" element={<Bares />} />
-          <Route path="/novo-bar" element={<NovoBar />} />
-          <Route path="/bar/:id" element={<BarDetail />} />
+          <Route path="/locais" element={<Bares />} />
+          <Route path="/novo-local" element={<NovoBar />} />
+          <Route path="/local/:id" element={<BarDetail />} />
           <Route path="/sugerir-disco" element={<SugerirDisco />} />
           {import.meta.env.DEV && (
             <Route path="/__dev-login" element={<DevLogin />} />

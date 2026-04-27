@@ -54,7 +54,7 @@ export const BarSuggestionsPanel: React.FC<BarSuggestionsPanelProps> = ({ idToke
       setNewBarName('');
       refresh();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'erro ao adicionar bar');
+      setCreateError(err instanceof Error ? err.message : 'erro ao adicionar local');
     } finally {
       setBusy(false);
     }
@@ -76,15 +76,15 @@ export const BarSuggestionsPanel: React.FC<BarSuggestionsPanelProps> = ({ idToke
       await deleteBarSuggestion(id, idToken);
       refresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'erro ao apagar bar');
+      setActionError(err instanceof Error ? err.message : 'erro ao apagar local');
     }
   }
 
   return (
     <ZineFrame bg="cream">
-      <h2 className="font-display text-xl text-zine-burntOrange mb-2">Bares sugeridos</h2>
+      <h2 className="font-display text-xl text-zine-burntOrange mb-2">Locais sugeridos</h2>
       <p className="font-body text-xs text-zine-burntOrange/70 mb-3 italic">
-        ❤️/💀 são votos do público. as abas abaixo são a sua curadoria — você pode mover bares entre elas independente dos votos.
+        ❤️/💀 são votos do público. as abas abaixo são a sua curadoria — você pode mover locais entre elas independente dos votos.
       </p>
 
       <form onSubmit={(e) => void handleCreate(e)} className="flex flex-col gap-3 mb-4">
@@ -93,11 +93,11 @@ export const BarSuggestionsPanel: React.FC<BarSuggestionsPanelProps> = ({ idToke
             type="text"
             value={newBarName}
             onChange={(e) => setNewBarName(e.target.value)}
-            placeholder="nome do bar"
+            placeholder="nome do local"
             className={`${inputClass} min-w-0 flex-1`}
           />
           <Button type="submit" disabled={busy || !newBarName.trim()} className="min-h-[44px]">
-            {busy ? 'adicionando...' : 'adicionar bar'}
+            {busy ? 'adicionando...' : 'adicionar local'}
           </Button>
         </div>
         {createError && (
@@ -161,7 +161,7 @@ export const BarSuggestionsPanel: React.FC<BarSuggestionsPanelProps> = ({ idToke
         ))}
         {!loading && filteredBars.length === 0 && (
           <p className="font-body italic text-zine-burntOrange/70">
-            nenhum bar nessa aba.
+            nenhum local nessa aba.
           </p>
         )}
       </div>

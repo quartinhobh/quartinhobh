@@ -26,23 +26,23 @@ describe('BarSuggestionForm', () => {
 
   it('renders without idToken (anonymous mode)', () => {
     renderForm({ idToken: null });
-    expect(screen.getByLabelText(/nome do bar/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /indicar bar/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/nome do local/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /indicar local/i })).toBeInTheDocument();
   });
 
   it('renders with idToken provided', () => {
     renderForm({ idToken: 'tok-123' });
-    expect(screen.getByLabelText(/nome do bar/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/nome do local/i)).toBeInTheDocument();
   });
 
-  it('"indicar bar" button is present', () => {
+  it('"indicar local" button is present', () => {
     renderForm();
-    expect(screen.getByRole('button', { name: /indicar bar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /indicar local/i })).toBeInTheDocument();
   });
 
   it('does NOT call API when name is empty and shows validation error', async () => {
     renderForm();
-    fireEvent.click(screen.getByRole('button', { name: /indicar bar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /indicar local/i }));
     expect(createMock).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(screen.getByText(/nome é obrigatório/i)).toBeInTheDocument();
@@ -52,28 +52,28 @@ describe('BarSuggestionForm', () => {
   it('on submit, createBarSuggestion payload does NOT include knowsOwner', async () => {
     createMock.mockResolvedValue(undefined);
     renderForm({ idToken: 'tok' });
-    fireEvent.change(screen.getByLabelText(/nome do bar/i), { target: { value: 'Bar do Zé' } });
-    fireEvent.click(screen.getByRole('button', { name: /indicar bar/i }));
+    fireEvent.change(screen.getByLabelText(/nome do local/i), { target: { value: 'Bar do Zé' } });
+    fireEvent.click(screen.getByRole('button', { name: /indicar local/i }));
     await waitFor(() => expect(createMock).toHaveBeenCalledOnce());
     const [payload] = createMock.mock.calls[0] as [Record<string, unknown>, string];
     expect(payload).not.toHaveProperty('knowsOwner');
     expect(payload.name).toBe('Bar do Zé');
   });
 
-  it('on success: shows "bar indicado com sucesso!"', async () => {
+  it('on success: shows "local indicado com sucesso!"', async () => {
     createMock.mockResolvedValue(undefined);
     renderForm();
-    fireEvent.change(screen.getByLabelText(/nome do bar/i), { target: { value: 'Bar Teste' } });
-    fireEvent.click(screen.getByRole('button', { name: /indicar bar/i }));
-    expect(await screen.findByText(/bar indicado com sucesso!/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/nome do local/i), { target: { value: 'Bar Teste' } });
+    fireEvent.click(screen.getByRole('button', { name: /indicar local/i }));
+    expect(await screen.findByText(/local indicado com sucesso!/i)).toBeInTheDocument();
   });
 
   it('on API error: shows error message', async () => {
     createMock.mockRejectedValue(new Error('servidor indisponível'));
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderForm();
-    fireEvent.change(screen.getByLabelText(/nome do bar/i), { target: { value: 'Bar Erro' } });
-    fireEvent.click(screen.getByRole('button', { name: /indicar bar/i }));
+    fireEvent.change(screen.getByLabelText(/nome do local/i), { target: { value: 'Bar Erro' } });
+    fireEvent.click(screen.getByRole('button', { name: /indicar local/i }));
     expect(await screen.findByText(/servidor indisponível/i)).toBeInTheDocument();
     errSpy.mockRestore();
   });
@@ -82,8 +82,8 @@ describe('BarSuggestionForm', () => {
     let resolve!: () => void;
     createMock.mockReturnValue(new Promise<void>((res) => { resolve = res; }));
     renderForm();
-    fireEvent.change(screen.getByLabelText(/nome do bar/i), { target: { value: 'Bar Busy' } });
-    fireEvent.click(screen.getByRole('button', { name: /indicar bar/i }));
+    fireEvent.change(screen.getByLabelText(/nome do local/i), { target: { value: 'Bar Busy' } });
+    fireEvent.click(screen.getByRole('button', { name: /indicar local/i }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /enviando\.\.\./i })).toBeDisabled(),
     );

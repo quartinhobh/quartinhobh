@@ -20,17 +20,17 @@ export default function BarDetail() {
   if (notFound || !bar) {
     return (
       <ZineFrame bg="periwinkle">
-        <p className="font-body text-zine-burntOrange">bar nao encontrado</p>
+        <p className="font-body text-zine-burntOrange">local nao encontrado</p>
       </ZineFrame>
     );
   }
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" style={{ filter: 'url(#zine-wobble)' }}>
       <Link
-        to="/bares"
+        to="/locais"
         className="font-body text-sm text-zine-burntOrange/70 hover:text-zine-burntOrange"
       >
-        ← bares
+        ← locais
       </Link>
       <BarCard
         bar={bar}

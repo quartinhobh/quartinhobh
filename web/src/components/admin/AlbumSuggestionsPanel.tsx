@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import SuggestionStatusTabs from '@/components/bares/SuggestionStatusTabs';
-import AlbumSuggestionForm from '@/components/bares/AlbumSuggestionForm';
 import { useAlbumSuggestions } from '@/hooks/useAlbumSuggestions';
 import {
   updateAlbumSuggestionStatus,
@@ -146,7 +146,11 @@ export const AlbumSuggestionsPanel: React.FC<AlbumSuggestionsPanelProps> = ({ id
       </p>
 
       <div className="mb-4">
-        <AlbumSuggestionForm idToken={idToken} onSuccess={refresh} />
+        <Link to="/sugerir-disco">
+          <Button type="button" className="w-full">
+            indicar disco →
+          </Button>
+        </Link>
       </div>
 
       <div className="mb-3">

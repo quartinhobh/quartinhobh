@@ -49,7 +49,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
       setSuccess(true);
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'erro ao indicar bar');
+      setError(err instanceof Error ? err.message : 'erro ao indicar local');
     } finally {
       setBusy(false);
     }
@@ -60,7 +60,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
 
         <div className="flex flex-col gap-1">
           <label className="font-body text-sm text-zine-burntOrange" htmlFor="bar-name">
-            nome do bar *
+            nome do local *
           </label>
           <input
             id="bar-name"
@@ -135,7 +135,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
 
         {success && (
           <div role="status" aria-live="polite" className="flex flex-col gap-2">
-            <p className="font-body text-sm text-zine-burntOrange">bar indicado com sucesso!</p>
+            <p className="font-body text-sm text-zine-burntOrange">local indicado com sucesso!</p>
           </div>
         )}
         {error && (
@@ -149,7 +149,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
         )}
 
         <Button type="submit" disabled={busy} className="w-full">
-          {busy ? 'enviando...' : 'indicar bar'}
+          {busy ? 'enviando...' : 'indicar local'}
         </Button>
     </form>
   );

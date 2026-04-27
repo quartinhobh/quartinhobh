@@ -102,4 +102,33 @@ export const ZineBorder: React.FC<Omit<ZineFrameProps, 'padded'>> = (props) => (
   <ZineFrameBase {...props} padded={false} />
 );
 
+/**
+ * ZineBorderDecorative — borda wobble + bg como camada decorativa absolute,
+ * conteudo dentro NAO recebe o filtro (texto fica nitido). Use quando voce
+ * quiser wobble visual na borda mas o conteudo deve ficar legivel
+ * (ex: letras de musica, listas de tracks).
+ */
+export const ZineBorderDecorative: React.FC<Omit<ZineFrameProps, 'noFilter' | 'wobble'>> = ({
+  bg = 'cream',
+  borderColor = 'cream',
+  padded = true,
+  className = '',
+  children,
+}) => {
+  return (
+    <div className={['relative min-w-0 max-w-full', padded ? 'p-4' : '', className].filter(Boolean).join(' ')}>
+      <div
+        aria-hidden
+        className={[
+          'absolute inset-0 pointer-events-none border-4',
+          bgClassMap[bg],
+          borderClassMap[borderColor],
+        ].join(' ')}
+        style={{ filter: 'url(#zine-wobble)' }}
+      />
+      <div className="relative">{children}</div>
+    </div>
+  );
+};
+
 export default ZineFrame;

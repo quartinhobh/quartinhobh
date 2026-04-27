@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * Bares E2E test suite (PLAN rev. 4)
+ * Locais E2E test suite (PLAN rev. 4)
  *
- * Covers: /bares, /bar/:id, /novo-bar, /sugerir-disco, footer links, TabNav,
- * and the admin panel bares/discos tabs.
+ * Covers: /locais, /local/:id, /novo-local, /sugerir-disco, footer links, TabNav,
+ * and the admin panel locais/discos tabs.
  *
  * Requires: emulators + dev server running (bun run emulators:up && bun run dev).
  * Anonymous tests degrade gracefully when the backend is unreachable.
@@ -54,22 +54,22 @@ async function seedBar(page: Page): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Anonymous user — /bares
+// Anonymous user — /locais
 // ---------------------------------------------------------------------------
 
-test.describe('anonymous user — /bares', () => {
+test.describe('anonymous user — /locais', () => {
   test.beforeEach(async ({ page }) => {
-    const res = await page.request.get('/bares').catch(() => null);
+    const res = await page.request.get('/locais').catch(() => null);
     test.skip(!res || !res.ok(), 'web dev server not reachable');
   });
 
-  test('page /bares loads with heading "bares"', async ({ page }) => {
-    await page.goto('/bares');
-    await expect(page.getByRole('heading', { name: /^bares$/i })).toBeVisible({ timeout: 10_000 });
+  test('page /locais loads with heading "locais"', async ({ page }) => {
+    await page.goto('/locais');
+    await expect(page.getByRole('heading', { name: /^locais$/i })).toBeVisible({ timeout: 10_000 });
   });
 
-  test('bar cards show vote counts with "curti"', async ({ page }) => {
-    await page.goto('/bares');
+  test('local cards show vote counts with "curti"', async ({ page }) => {
+    await page.goto('/locais');
     // Wait for either a card or an empty-state message
     const cardOrEmpty = page.locator('[class*="ZineFrame"], .font-display').first();
     await expect(cardOrEmpty).toBeVisible({ timeout: 10_000 });
@@ -80,16 +80,16 @@ test.describe('anonymous user — /bares', () => {
   });
 
   test('vote buttons are disabled and "faca login pra votar" is visible', async ({ page }) => {
-    await page.goto('/bares');
-    // Navigate into the first bar detail if one exists so we can inspect the button
-    const firstBarLink = page.locator('a[href^="/bar/"]').first();
-    const hasBars = await firstBarLink.isVisible().catch(() => false);
-    if (!hasBars) {
-      test.skip(true, 'no bars seeded — skipping vote button check');
+    await page.goto('/locais');
+    // Navigate into the first local detail if one exists so we can inspect the button
+    const firstLocalLink = page.locator('a[href^="/local/"]').first();
+    const hasLocais = await firstLocalLink.isVisible().catch(() => false);
+    if (!hasLocais) {
+      test.skip(true, 'no locais seeded — skipping vote button check');
       return;
     }
-    await firstBarLink.click();
-    await expect(page).toHaveURL(/\/bar\/.+/, { timeout: 10_000 });
+    await firstLocalLink.click();
+    await expect(page).toHaveURL(/\/local\/.+/, { timeout: 10_000 });
     // Disabled curti button
     const curtiButton = page.getByRole('button', { name: /curti/i }).first();
     await expect(curtiButton).toBeDisabled({ timeout: 5_000 });
@@ -97,65 +97,65 @@ test.describe('anonymous user — /bares', () => {
     await expect(page.getByText(/faca login pra votar/i)).toBeVisible();
   });
 
-  test('/novo-bar — user submits a suggestion; success or redirect', async ({ page }) => {
-    await page.goto('/novo-bar');
-    await expect(page.getByRole('heading', { name: /indicar bar/i })).toBeVisible({ timeout: 10_000 });
-    await page.getByLabel(/nome do bar/i).fill(`E2E Anon Bar ${Date.now()}`);
-    await page.getByRole('button', { name: /indicar bar/i }).click();
-    // Either success message or navigation to /bares
+  test('/novo-local — user submits a suggestion; success or redirect', async ({ page }) => {
+    await page.goto('/novo-local');
+    await expect(page.getByRole('heading', { name: /indicar local/i })).toBeVisible({ timeout: 10_000 });
+    await page.getByLabel(/nome do local/i).fill(`E2E Anon Local ${Date.now()}`);
+    await page.getByRole('button', { name: /indicar local/i }).click();
+    // Either success message or navigation to /locais
     await Promise.race([
-      expect(page.getByText(/bar indicado com sucesso/i)).toBeVisible({ timeout: 15_000 }),
-      expect(page).toHaveURL(/\/bares/, { timeout: 15_000 }),
+      expect(page.getByText(/local indicado com sucesso/i)).toBeVisible({ timeout: 15_000 }),
+      expect(page).toHaveURL(/\/locais/, { timeout: 15_000 }),
     ]).catch(() => {
       // API may fail in CI without emulators — just verify the form existed
     });
   });
 
-  test('/novo-bar — "veja a lista" link present pointing to /bares', async ({ page }) => {
-    await page.goto('/novo-bar');
+  test('/novo-local — "veja a lista" link present pointing to /locais', async ({ page }) => {
+    await page.goto('/novo-local');
     const link = page.getByRole('link', { name: /veja a lista/i });
     await expect(link).toBeVisible({ timeout: 10_000 });
-    await expect(link).toHaveAttribute('href', '/bares');
+    await expect(link).toHaveAttribute('href', '/locais');
   });
 
-  test('clicking a bar card on /bares navigates to /bar/:id', async ({ page }) => {
-    await page.goto('/bares');
-    const firstBarLink = page.locator('a[href^="/bar/"]').first();
-    const hasBars = await firstBarLink.isVisible({ timeout: 8_000 }).catch(() => false);
-    if (!hasBars) {
-      test.skip(true, 'no bars seeded — skipping card navigation check');
+  test('clicking a local card on /locais navigates to /local/:id', async ({ page }) => {
+    await page.goto('/locais');
+    const firstLocalLink = page.locator('a[href^="/local/"]').first();
+    const hasLocais = await firstLocalLink.isVisible({ timeout: 8_000 }).catch(() => false);
+    if (!hasLocais) {
+      test.skip(true, 'no locais seeded — skipping card navigation check');
       return;
     }
-    await firstBarLink.click();
-    await expect(page).toHaveURL(/\/bar\/.+/, { timeout: 10_000 });
+    await firstLocalLink.click();
+    await expect(page).toHaveURL(/\/local\/.+/, { timeout: 10_000 });
   });
 
-  test('/bar/:id — shows bar card, vote section, and comments section', async ({ page }) => {
-    await page.goto('/bares');
-    const firstBarLink = page.locator('a[href^="/bar/"]').first();
-    const hasBars = await firstBarLink.isVisible({ timeout: 8_000 }).catch(() => false);
-    if (!hasBars) {
-      test.skip(true, 'no bars seeded — skipping bar detail check');
+  test('/local/:id — shows local card, vote section, and comments section', async ({ page }) => {
+    await page.goto('/locais');
+    const firstLocalLink = page.locator('a[href^="/local/"]').first();
+    const hasLocais = await firstLocalLink.isVisible({ timeout: 8_000 }).catch(() => false);
+    if (!hasLocais) {
+      test.skip(true, 'no locais seeded — skipping local detail check');
       return;
     }
-    await firstBarLink.click();
-    await expect(page).toHaveURL(/\/bar\/.+/, { timeout: 10_000 });
+    await firstLocalLink.click();
+    await expect(page).toHaveURL(/\/local\/.+/, { timeout: 10_000 });
     // Vote buttons visible
     await expect(page.getByRole('button', { name: /curti/i }).first()).toBeVisible({ timeout: 8_000 });
     // Comments section visible (either a message or a form placeholder)
     await expect(page.getByText(/faca login pra comentar|nenhum comentário|carregando/i)).toBeVisible({ timeout: 8_000 });
   });
 
-  test('/bar/:id — comment form disabled with "faca login pra comentar"', async ({ page }) => {
-    await page.goto('/bares');
-    const firstBarLink = page.locator('a[href^="/bar/"]').first();
-    const hasBars = await firstBarLink.isVisible({ timeout: 8_000 }).catch(() => false);
-    if (!hasBars) {
-      test.skip(true, 'no bars seeded — skipping comment gating check');
+  test('/local/:id — comment form disabled with "faca login pra comentar"', async ({ page }) => {
+    await page.goto('/locais');
+    const firstLocalLink = page.locator('a[href^="/local/"]').first();
+    const hasLocais = await firstLocalLink.isVisible({ timeout: 8_000 }).catch(() => false);
+    if (!hasLocais) {
+      test.skip(true, 'no locais seeded — skipping comment gating check');
       return;
     }
-    await firstBarLink.click();
-    await expect(page).toHaveURL(/\/bar\/.+/, { timeout: 10_000 });
+    await firstLocalLink.click();
+    await expect(page).toHaveURL(/\/local\/.+/, { timeout: 10_000 });
     await expect(page.getByText(/faca login pra comentar/i)).toBeVisible({ timeout: 8_000 });
     // Textarea should NOT be present for anonymous user
     await expect(page.getByPlaceholder(/escreva um comentário/i)).toHaveCount(0);
@@ -180,49 +180,49 @@ test.describe('authenticated user — voting and commenting', () => {
     await page.close();
   });
 
-  test('logged-in user can click vote button on /bar/:id (no disabled state)', async ({ page }) => {
+  test('logged-in user can click vote button on /local/:id (no disabled state)', async ({ page }) => {
     // TODO: requires a seeded regular user (USER_EMAIL / USER_PASSWORD).
     // If the seed user doesn't exist in the emulator, this test is skipped.
-    const loginOk = await devLoginUser(page, '/bares').then(() => true).catch(() => false);
+    const loginOk = await devLoginUser(page, '/locais').then(() => true).catch(() => false);
     if (!loginOk) {
       test.skip(true, 'seed user not available — skipping authenticated vote test');
       return;
     }
-    const targetUrl = barId ? `/bar/${barId}` : '/bares';
+    const targetUrl = barId ? `/local/${barId}` : '/locais';
     await page.goto(targetUrl);
     if (!barId) {
-      const firstBarLink = page.locator('a[href^="/bar/"]').first();
-      const hasBars = await firstBarLink.isVisible({ timeout: 8_000 }).catch(() => false);
-      if (!hasBars) {
-        test.skip(true, 'no bars available — skipping authenticated vote test');
+      const firstLocalLink = page.locator('a[href^="/local/"]').first();
+      const hasLocais = await firstLocalLink.isVisible({ timeout: 8_000 }).catch(() => false);
+      if (!hasLocais) {
+        test.skip(true, 'no locais available — skipping authenticated vote test');
         return;
       }
-      await firstBarLink.click();
-      await expect(page).toHaveURL(/\/bar\/.+/, { timeout: 10_000 });
+      await firstLocalLink.click();
+      await expect(page).toHaveURL(/\/local\/.+/, { timeout: 10_000 });
     }
     // For a logged-in user the curti button must NOT be disabled
     const curtiButton = page.getByRole('button', { name: /curti/i }).first();
     await expect(curtiButton).toBeEnabled({ timeout: 8_000 });
   });
 
-  test('logged-in user can submit a comment on /bar/:id', async ({ page }) => {
+  test('logged-in user can submit a comment on /local/:id', async ({ page }) => {
     // TODO: requires a seeded regular user (USER_EMAIL / USER_PASSWORD).
-    const loginOk = await devLoginUser(page, '/bares').then(() => true).catch(() => false);
+    const loginOk = await devLoginUser(page, '/locais').then(() => true).catch(() => false);
     if (!loginOk) {
       test.skip(true, 'seed user not available — skipping authenticated comment test');
       return;
     }
-    const targetUrl = barId ? `/bar/${barId}` : '/bares';
+    const targetUrl = barId ? `/local/${barId}` : '/locais';
     await page.goto(targetUrl);
     if (!barId) {
-      const firstBarLink = page.locator('a[href^="/bar/"]').first();
-      const hasBars = await firstBarLink.isVisible({ timeout: 8_000 }).catch(() => false);
-      if (!hasBars) {
-        test.skip(true, 'no bars available — skipping authenticated comment test');
+      const firstLocalLink = page.locator('a[href^="/local/"]').first();
+      const hasLocais = await firstLocalLink.isVisible({ timeout: 8_000 }).catch(() => false);
+      if (!hasLocais) {
+        test.skip(true, 'no locais available — skipping authenticated comment test');
         return;
       }
-      await firstBarLink.click();
-      await expect(page).toHaveURL(/\/bar\/.+/, { timeout: 10_000 });
+      await firstLocalLink.click();
+      await expect(page).toHaveURL(/\/local\/.+/, { timeout: 10_000 });
     }
     // For a logged-in user the comment textarea should be present
     const textarea = page.getByPlaceholder(/escreva um comentário/i);
@@ -239,7 +239,7 @@ test.describe('footer links', () => {
     await page.goto('/');
     const link = page.getByRole('link', { name: /sugestao de local/i });
     await expect(link).toBeVisible({ timeout: 10_000 });
-    await expect(link).toHaveAttribute('href', '/novo-bar');
+    await expect(link).toHaveAttribute('href', '/novo-local');
   });
 
   test('"sugestao de disco" NOT visible in footer for anonymous user', async ({ page }) => {
@@ -281,27 +281,27 @@ test.describe('/sugerir-disco', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('TabNav', () => {
-  test('TabNav shows "bares" tab for anonymous user', async ({ page }) => {
+  test('TabNav shows "locais" tab for anonymous user', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: /^bares$/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('link', { name: /^locais$/i })).toBeVisible({ timeout: 10_000 });
   });
 
-  test('clicking "bares" tab navigates to /bares', async ({ page }) => {
+  test('clicking "locais" tab navigates to /locais', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /^bares$/i }).click();
-    await expect(page).toHaveURL(/\/bares$/, { timeout: 10_000 });
+    await page.getByRole('link', { name: /^locais$/i }).click();
+    await expect(page).toHaveURL(/\/locais$/, { timeout: 10_000 });
   });
 });
 
 // ---------------------------------------------------------------------------
-// Admin panel — bares/discos tabs
+// Admin panel — locais/discos tabs
 // ---------------------------------------------------------------------------
 
-test.describe('admin panel — bares/discos tabs', () => {
-  test('admin: /admin#bares shows "Bares" tab in tab list', async ({ page }) => {
+test.describe('admin panel — locais/discos tabs', () => {
+  test('admin: /admin#locais shows "Locais" tab in tab list', async ({ page }) => {
     await devLogin(page, '/admin');
-    await page.goto('/admin#bares');
-    await expect(page.getByRole('tab', { name: /^Bares$/i })).toBeVisible({ timeout: 10_000 });
+    await page.goto('/admin#locais');
+    await expect(page.getByRole('tab', { name: /^Locais$/i })).toBeVisible({ timeout: 10_000 });
   });
 
   test('admin: /admin#discos shows "Discos" tab in tab list', async ({ page }) => {

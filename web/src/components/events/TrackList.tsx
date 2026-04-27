@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ZineFrameNoWobble } from '@/components/common/ZineFrame';
+import { ZineBorderDecorative } from '@/components/common/ZineFrame';
 import { LyricsDisplay } from '@/components/events/LyricsDisplay';
 import { useLyrics } from '@/hooks/useLyrics';
 import type { MusicBrainzTrack, UserVote } from '@/types';
@@ -83,7 +83,7 @@ export const TrackList: React.FC<TrackListProps> = ({
   }
 
   return (
-    <ZineFrameNoWobble bg="cream" borderColor="burntYellow">
+    <ZineBorderDecorative bg="cream" borderColor="burntYellow">
       <ol className="font-body space-y-1" aria-label="tracks">
         {tracks.map((t) => {
           const isOpen = expandedId === t.id;
@@ -94,8 +94,7 @@ export const TrackList: React.FC<TrackListProps> = ({
           return (
             <li key={t.id}>
               <div
-                className="flex items-center gap-2 py-1 px-1 relative"
-                style={{ filter: 'url(#zine-wobble)' }}>
+                className="flex items-center gap-2 py-1 px-1 relative">
                   {/* Track info — click to show lyrics */}
                   <button
                     type="button"
@@ -180,7 +179,7 @@ export const TrackList: React.FC<TrackListProps> = ({
           enviando voto…
         </p>
       )}
-    </ZineFrameNoWobble>
+    </ZineBorderDecorative>
   );
 };
 
