@@ -94,7 +94,8 @@ export const TrackList: React.FC<TrackListProps> = ({
           return (
             <li key={t.id}>
               <div
-                className="flex items-center gap-2 py-1 px-1 relative">
+                className="flex items-center gap-2 py-1 px-1 relative"
+                style={{ filter: 'url(#zine-wobble)' }}>
                   {/* Track info — click to show lyrics */}
                   <button
                     type="button"

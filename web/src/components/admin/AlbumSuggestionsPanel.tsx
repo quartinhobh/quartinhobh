@@ -17,6 +17,32 @@ export interface AlbumSuggestionsPanelProps {
   idToken: string;
 }
 
+function AlbumCover({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="relative h-16 w-16 border-2 border-zine-burntYellow bg-zine-periwinkle/40 dark:bg-zine-periwinkle-dark/40 shrink-0 overflow-hidden">
+      {!loaded && (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-br from-zine-periwinkle/60 to-zine-burntYellow/40 animate-pulse"
+          style={{ filter: 'blur(8px)' }}
+        />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+        className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  );
+}
+
 function AlbumCard({ album }: { album: AlbumSuggestion }) {
   const hasData =
     album.albumTitle ||
@@ -38,12 +64,7 @@ function AlbumCard({ album }: { album: AlbumSuggestion }) {
           {/* Cover + title/artist */}
           <div className="flex items-start gap-3">
             {album.coverUrl && (
-              <img
-                src={album.coverUrl}
-                alt={altText || ''}
-                className="h-16 w-16 object-cover border-2 border-zine-burntYellow shrink-0"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
+              <AlbumCover src={album.coverUrl} alt={altText} />
             )}
             <div className="flex flex-col min-w-0">
               {album.albumTitle && (
