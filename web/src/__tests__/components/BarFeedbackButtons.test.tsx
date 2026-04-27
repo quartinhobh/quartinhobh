@@ -33,12 +33,15 @@ describe('BarFeedbackButtons', () => {
     expect(screen.getByRole('button', { name: /nao gostei.*1/i })).toBeInTheDocument();
   });
 
-  it('when firebaseUid=null and no onRequestLogin: text "faca login pra votar" is visible', () => {
+  it('when firebaseUid=null and no onRequestLogin: clicking vote button is a no-op', () => {
+    const handleVote = vi.fn();
+    useBarFeedbackMock.mockReturnValue({ ...defaultHookResult, handleVote });
     render(<BarFeedbackButtons barId="bar-1" idToken={null} firebaseUid={null} />);
-    expect(screen.getByText(/faca login pra votar/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /curti/i }));
+    expect(handleVote).not.toHaveBeenCalled();
   });
 
-  it('when firebaseUid=null and onRequestLogin provided: shows "entrar pra votar" button', () => {
+  it('when firebaseUid=null and onRequestLogin provided: clicking vote button calls onRequestLogin', () => {
     const onRequestLogin = vi.fn();
     render(
       <BarFeedbackButtons
@@ -48,9 +51,7 @@ describe('BarFeedbackButtons', () => {
         onRequestLogin={onRequestLogin}
       />,
     );
-    const loginBtn = screen.getByRole('button', { name: /entrar pra votar/i });
-    expect(loginBtn).toBeInTheDocument();
-    fireEvent.click(loginBtn);
+    fireEvent.click(screen.getByRole('button', { name: /curti/i }));
     expect(onRequestLogin).toHaveBeenCalledOnce();
   });
 

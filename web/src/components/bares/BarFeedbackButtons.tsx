@@ -6,6 +6,7 @@ export interface BarFeedbackButtonsProps {
   idToken: string | null;
   firebaseUid: string | null;
   onRequestLogin?: () => void;
+  trailingAction?: React.ReactNode;
 }
 
 export const BarFeedbackButtons: React.FC<BarFeedbackButtonsProps> = ({
@@ -13,6 +14,7 @@ export const BarFeedbackButtons: React.FC<BarFeedbackButtonsProps> = ({
   idToken,
   firebaseUid,
   onRequestLogin,
+  trailingAction,
 }) => {
   const {
     likedCount,
@@ -84,21 +86,7 @@ export const BarFeedbackButtons: React.FC<BarFeedbackButtonsProps> = ({
           💀 nao gostei ({dislikedCount})
         </button>
 
-        {isAnonymous && onRequestLogin && (
-          <button
-            type="button"
-            onClick={onRequestLogin}
-            className="font-body text-xs text-zine-burntOrange/70 underline min-h-[44px] px-2"
-          >
-            entrar pra votar →
-          </button>
-        )}
-
-        {isAnonymous && !onRequestLogin && (
-          <span className="font-body text-xs text-zine-burntOrange/70">
-            faca login pra votar
-          </span>
-        )}
+        {trailingAction}
       </div>
 
       {error && (
