@@ -57,12 +57,12 @@ logs-emulator: ## Tail emulator logs only
 
 seed: ## Seed emulator with admin user + sample event (needs .env.seed)
 	@test -f .env.seed || (echo "✗ .env.seed missing. Run: cp .env.seed.example .env.seed"; exit 1)
-	bun run seed
+	docker exec --env-file .env.seed gustavo_quartinho-api-1 bash -c "cd /app && bun run seed"
 	docker exec gustavo_quartinho-api-1 bash /app/scripts/make-admin.sh admin@quartinho.local
 
 seed-extra: ## Seed extra: more users, events, RSVPs, products, links, banners
 	@test -f .env.seed || (echo "✗ .env.seed missing. Run: cp .env.seed.example .env.seed"; exit 1)
-	bun run seed-extra
+	docker exec --env-file .env.seed gustavo_quartinho-api-1 bash -c "cd /app && bun run seed-extra"
 
 reset: down ## Wipe emulator data and start fresh (DESTRUCTIVE)
 	rm -rf .firebase-data
