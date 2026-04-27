@@ -12,6 +12,8 @@ import LinkTreePanel from '@/components/admin/LinkTreePanel';
 import BannerPanel from '@/components/admin/BannerPanel';
 import StickerPanel from '@/components/admin/StickerPanel';
 import RsvpPanel from '@/components/admin/RsvpPanel';
+import BarSuggestionsPanel from '@/components/admin/BarSuggestionsPanel';
+import AlbumSuggestionsPanel from '@/components/admin/AlbumSuggestionsPanel';
 import { CanShow } from '@/components/admin/CanShow';
 import HelperBox from '@/components/admin/HelperBox';
 import { HelperProvider, useHelper } from '@/components/admin/HelperContext';
@@ -38,7 +40,7 @@ export interface AdminPanelProps {
   idToken?: string | null;
 }
 
-type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'chat' | 'linktree' | 'banners' | 'stickers' | 'presenca';
+type Tab = 'guia' | 'events' | 'photos' | 'moderation' | 'lojinha' | 'pix' | 'users' | 'email' | 'chat' | 'linktree' | 'banners' | 'stickers' | 'presenca' | 'bares' | 'discos';
 
 function getCategoryLabel(category: PhotoCategory): string {
   const labels: Record<PhotoCategory, string> = {
@@ -57,7 +59,7 @@ function getCategoryLabel(category: PhotoCategory): string {
  */
 function getHashTab(): Tab {
   const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'chat', 'linktree', 'banners', 'stickers', 'presenca'];
+  const valid: Tab[] = ['guia', 'events', 'photos', 'moderation', 'lojinha', 'pix', 'users', 'email', 'chat', 'linktree', 'banners', 'stickers', 'presenca', 'bares', 'discos'];
   return valid.includes(hash as Tab) ? (hash as Tab) : 'events';
 }
 
@@ -179,6 +181,8 @@ const AdminPanelInner: React.FC = () => {
     { key: 'banners', label: 'Banners' },
     { key: 'stickers', label: 'Stickers' },
     { key: 'presenca', label: 'Presença' },
+    { key: 'bares', label: 'Bares' },
+    { key: 'discos', label: 'Discos' },
   ];
 
   const guiaButton = (
@@ -235,6 +239,8 @@ const AdminPanelInner: React.FC = () => {
       {tab === 'banners' && <BannerPanel />}
       {tab === 'stickers' && <StickerPanel />}
       {tab === 'presenca' && <PresencaTab idToken={idToken} />}
+      {tab === 'bares' && <BarSuggestionsPanel idToken={idToken ?? ''} />}
+      {tab === 'discos' && <AlbumSuggestionsPanel idToken={idToken ?? ''} />}
       <CanShow />
       <p className="text-right">
         <a href="https://github.com/quartinhobh/pwa_web" target="_blank" rel="noopener noreferrer" className="font-body text-xs text-zine-burntOrange/30 hover:text-zine-burntOrange/60 underline inline-flex items-center gap-1">

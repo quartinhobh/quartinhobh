@@ -91,6 +91,34 @@ service cloud.firestore {
       allow write: if false; // server-side only
     }
 
+    // barSuggestions: public read (list + get); server-side write only (Admin SDK bypasses rules).
+    match /barSuggestions/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // barFeedbacks: public read of counts; authenticated users can write their own vote doc.
+    // Structure: barFeedbacks/{barId}/userVotes/{userId}
+    match /barFeedbacks/{barId}/userVotes/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // albumSuggestions: admin read only; server-side write.
+    match /albumSuggestions/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // suggestionComments: bar type requires auth for client SDK read;
+    // album type requires admin. All writes are server-side only.
+    match /suggestionComments/{id} {
+      allow read: if resource.data.suggestionType == 'bar'
+                     ? request.auth != null
+                     : isAdmin();
+      allow write: if false;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

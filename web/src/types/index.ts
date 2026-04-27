@@ -374,3 +374,91 @@ export interface MusicBrainzRelease {
   date: string;
   tracks: MusicBrainzTrack[];
 }
+
+// ── Bares & Discos ────────────────────────────────────────────────────────
+
+export type SuggestionStatus = 'suggested' | 'liked' | 'disliked';
+
+export interface BarSuggestion {
+  id: string;
+  status: SuggestionStatus;
+  suggestedByUid: string | null;
+  suggestedByEmail: string | null;
+  createdAt: number;
+  updatedAt: number;
+  name: string;
+  address: string | null;
+  instagram: string | null;
+  isClosed: boolean;
+  hasSoundSystem: boolean;
+}
+
+export type PublicBarSuggestion = Omit<BarSuggestion, 'status'>;
+
+export interface AlbumSuggestion {
+  id: string;
+  status: SuggestionStatus;
+  suggestedByUid: string | null;
+  suggestedByEmail: string | null;
+  suggestionCount: number;
+  createdAt: number;
+  updatedAt: number;
+  mbid: string | null;
+  albumTitle: string | null;
+  artistName: string | null;
+  coverUrl: string | null;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
+  notes: string | null;
+  instagramLink: string | null; // legado
+}
+
+export interface BarFeedback {
+  vote: 'liked' | 'disliked';
+  createdAt: number;
+}
+
+export interface BarFeedbackCount {
+  liked: number;
+  disliked: number;
+  userVote?: 'liked' | 'disliked';
+}
+
+export interface SuggestionComment {
+  id: string;
+  suggestionId: string;
+  suggestionType: 'bar' | 'album';
+  userId: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SuggestionCommentWithUser extends SuggestionComment {
+  user: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+}
+
+export interface CreateBarSuggestionPayload {
+  name: string;
+  address?: string | null;
+  instagram?: string | null;
+  isClosed?: boolean;
+  hasSoundSystem?: boolean;
+}
+
+export interface CreateAlbumSuggestionPayload {
+  mbid?: string | null;
+  albumTitle?: string | null;
+  artistName?: string | null;
+  spotifyUrl?: string | null;
+  youtubeUrl?: string | null;
+  notes?: string | null;
+}
+
+export interface PostBarFeedbackPayload {
+  vote: 'liked' | 'disliked';
+}

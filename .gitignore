@@ -56,3 +56,5 @@ web/test-results/
 
 nota.txt.env
 .env.*
+
+.dagrobin/

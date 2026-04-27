@@ -9,6 +9,7 @@ interface Tab {
 const TABS: Tab[] = [
   { to: '/', label: 'ouvir' },
   { to: '/archive', label: 'arquivo' },
+  { to: '/bares', label: 'bares' },
   { to: '/admin', label: 'admin' },
 ];
 

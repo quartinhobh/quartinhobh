@@ -1,10 +1,15 @@
 import type {
   AdminRsvpEntry,
+  AlbumSuggestion,
   Ban,
   Banner,
+  BarFeedbackCount,
+  BarSuggestion,
   BannerRoute,
   Comment,
   CommentWithUser,
+  CreateAlbumSuggestionPayload,
+  CreateBarSuggestionPayload,
   EmailTemplate,
   EmailTemplateKey,
   Event,
@@ -17,6 +22,7 @@ import type {
   PhotoCategory,
   PixConfig,
   Product,
+  PublicBarSuggestion,
   FavoriteAlbum,
   LinkTreeItem,
   RsvpConfig,
@@ -24,6 +30,9 @@ import type {
   RsvpSummary,
   SocialLink,
   StickerConfig,
+  SuggestionComment,
+  SuggestionCommentWithUser,
+  SuggestionStatus,
   User,
   UserRole,
   UserVote,
@@ -1450,4 +1459,216 @@ export async function deleteComment(commentId: string, idToken: string): Promise
     headers: { Authorization: `Bearer ${idToken}` },
   });
   if (!res.ok) throw new Error(`DELETE /comments/${commentId} failed: ${res.status}`);
+}
+
+// ── Bares & Discos ────────────────────────────────────────────────────────
+
+export async function fetchBarSuggestions(): Promise<PublicBarSuggestion[]> {
+  const res = await fetch(`${API_URL}/suggestions/bars`);
+  if (!res.ok) throw new Error(`GET /suggestions/bars failed: ${res.status}`);
+  const json = await res.json() as { data: PublicBarSuggestion[] };
+  return json.data;
+}
+
+export async function fetchBarSuggestion(id: string): Promise<PublicBarSuggestion> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${id}`);
+  if (!res.ok) throw new Error(`GET /suggestions/bars/${id} failed: ${res.status}`);
+  const json = await res.json() as { data: PublicBarSuggestion };
+  return json.data;
+}
+
+export async function createBarSuggestion(
+  payload: CreateBarSuggestionPayload,
+  idToken?: string | null,
+): Promise<BarSuggestion> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+  const res = await fetch(`${API_URL}/suggestions/bars`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`POST /suggestions/bars failed: ${res.status}`);
+  const json = await res.json() as { data: BarSuggestion };
+  return json.data;
+}
+
+export async function updateBarSuggestionStatus(
+  id: string,
+  status: SuggestionStatus,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(`PATCH /suggestions/bars/${id}/status failed: ${res.status}`);
+}
+
+export async function deleteBarSuggestion(id: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /suggestions/bars/${id} failed: ${res.status}`);
+}
+
+export async function fetchBarFeedback(
+  barId: string,
+  idToken?: string | null,
+): Promise<BarFeedbackCount> {
+  const headers: Record<string, string> = {};
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+  const res = await fetch(`${API_URL}/suggestions/bars/${barId}/feedback`, { headers });
+  if (!res.ok) throw new Error(`GET /suggestions/bars/${barId}/feedback failed: ${res.status}`);
+  const json = await res.json() as { data: BarFeedbackCount };
+  return json.data;
+}
+
+export async function postBarFeedback(
+  barId: string,
+  vote: 'liked' | 'disliked',
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${barId}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ vote }),
+  });
+  if (!res.ok) throw new Error(`POST /suggestions/bars/${barId}/feedback failed: ${res.status}`);
+}
+
+export async function deleteBarFeedback(barId: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${barId}/feedback`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /suggestions/bars/${barId}/feedback failed: ${res.status}`);
+}
+
+export async function fetchAlbumSuggestions(
+  status?: SuggestionStatus,
+  idToken?: string | null,
+): Promise<AlbumSuggestion[]> {
+  const url = new URL(`${API_URL}/suggestions/albums`);
+  if (status) url.searchParams.set('status', status);
+  const headers: Record<string, string> = {};
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+  const res = await fetch(url.toString(), { headers });
+  if (!res.ok) throw new Error(`GET /suggestions/albums failed: ${res.status}`);
+  const json = await res.json() as { data: AlbumSuggestion[] };
+  return json.data;
+}
+
+export async function createAlbumSuggestion(
+  payload: CreateAlbumSuggestionPayload,
+  idToken?: string | null,
+): Promise<AlbumSuggestion> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (idToken) headers.Authorization = `Bearer ${idToken}`;
+  const res = await fetch(`${API_URL}/suggestions/albums`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`POST /suggestions/albums failed: ${res.status}`);
+  const json = await res.json() as { data: AlbumSuggestion };
+  return json.data;
+}
+
+export async function updateAlbumSuggestionStatus(
+  id: string,
+  status: SuggestionStatus,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/albums/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(`PATCH /suggestions/albums/${id}/status failed: ${res.status}`);
+}
+
+export async function deleteAlbumSuggestion(id: string, idToken: string): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/albums/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE /suggestions/albums/${id} failed: ${res.status}`);
+}
+
+export async function fetchSuggestionComments(
+  barId: string,
+): Promise<SuggestionCommentWithUser[]> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${barId}/comments`);
+  if (!res.ok) throw new Error(`GET /suggestions/bars/${barId}/comments failed: ${res.status}`);
+  const json = await res.json() as { data: SuggestionCommentWithUser[] };
+  return json.data;
+}
+
+export async function postSuggestionComment(
+  barId: string,
+  content: string,
+  idToken: string,
+): Promise<SuggestionComment> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${barId}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error(`POST /suggestions/bars/${barId}/comments failed: ${res.status}`);
+  const json = await res.json() as { data: SuggestionComment };
+  return json.data;
+}
+
+export async function deleteSuggestionComment(
+  barId: string,
+  commentId: string,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/bars/${barId}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE comment failed: ${res.status}`);
+}
+
+export async function fetchAlbumComments(
+  albumId: string,
+  idToken: string,
+): Promise<SuggestionCommentWithUser[]> {
+  const res = await fetch(`${API_URL}/suggestions/albums/${albumId}/comments`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`GET /suggestions/albums/${albumId}/comments failed: ${res.status}`);
+  const json = await res.json() as { data: SuggestionCommentWithUser[] };
+  return json.data;
+}
+
+export async function postAlbumComment(
+  albumId: string,
+  content: string,
+  idToken: string,
+): Promise<SuggestionComment> {
+  const res = await fetch(`${API_URL}/suggestions/albums/${albumId}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error(`POST /suggestions/albums/${albumId}/comments failed: ${res.status}`);
+  const json = await res.json() as { data: SuggestionComment };
+  return json.data;
+}
+
+export async function deleteAlbumComment(
+  albumId: string,
+  commentId: string,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/suggestions/albums/${albumId}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) throw new Error(`DELETE album comment failed: ${res.status}`);
 }

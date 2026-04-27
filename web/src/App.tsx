@@ -39,6 +39,10 @@ const DevLogin = lazy(() => import('@/pages/DevLogin'));
 const AdminLogin = lazy(() => import('@/pages/AdminLogin'));
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const BannerDisplay = lazy(() => import('@/components/layout/BannerDisplay'));
+const Bares = lazy(() => import('@/pages/Bares'));
+const NovoBar = lazy(() => import('@/pages/NovoBar'));
+const BarDetail = lazy(() => import('@/pages/BarDetail'));
+const SugerirDisco = lazy(() => import('@/pages/SugerirDisco'));
 
 /** Reads :eventId from the route and forwards to EventDetail. */
 function EventDetailRoute() {
@@ -60,7 +64,11 @@ function PageFallback() {
 /** Main content wrapper that adapts width based on route */
 function MainContent({ idToken }: { idToken: string | null }) {
   const location = useLocation();
-  const isAdmin = location.pathname === '/admin';
+  const isAdmin =
+    location.pathname === '/admin' ||
+    location.pathname === '/bares' ||
+    location.pathname.startsWith('/bar/') ||
+    location.pathname === '/sugerir-disco';
 
   return (
     <main className={`flex-1 mx-auto w-full px-4 py-3 ${
@@ -83,6 +91,10 @@ function MainContent({ idToken }: { idToken: string | null }) {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin idToken={idToken} />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/bares" element={<Bares />} />
+          <Route path="/novo-bar" element={<NovoBar />} />
+          <Route path="/bar/:id" element={<BarDetail />} />
+          <Route path="/sugerir-disco" element={<SugerirDisco />} />
           {import.meta.env.DEV && (
             <Route path="/__dev-login" element={<DevLogin />} />
           )}

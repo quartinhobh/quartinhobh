@@ -6,6 +6,7 @@ import { createEvent, updateEvent, type MbSearchResult } from '@/services/api';
 import { useIdToken } from '@/hooks/useIdToken';
 import { useMusicBrainzSearch } from '@/hooks/useMusicBrainzSearch';
 import MbResultsList from '@/components/common/MbResultsList';
+import AddressAutocomplete from '@/components/common/AddressAutocomplete';
 import HelperBox from '@/components/admin/HelperBox';
 import {
   getDefaultEventDate,
@@ -299,7 +300,14 @@ export const EventForm: React.FC<EventFormProps> = ({
 
         <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">
           <span>Local</span>
-          <input aria-label="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="ex: Quartinho BH — Rua Exemplo, 123" className={inputClass} />
+          <AddressAutocomplete
+            id="event-location"
+            ariaLabel="location"
+            value={location}
+            onChange={setLocation}
+            placeholder="ex: Quartinho BH — Rua Exemplo, 123"
+            className={`w-full ${inputClass}`}
+          />
         </label>
 
         <label className="font-body text-zine-burntOrange dark:text-zine-cream flex flex-col gap-1">

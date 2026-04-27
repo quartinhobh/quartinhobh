@@ -47,3 +47,13 @@ export const guestRsvpLimiter: RateLimitRequestHandler = rateLimit({
   legacyHeaders: false,
   skip,
 });
+
+// Anonymous bar suggestion submissions — per IP, 3/hour.
+// Applied only when req.user is null on POST /suggestions/bars.
+export const anonymousSuggestionLimiter: RateLimitRequestHandler = rateLimit({
+  windowMs: 60 * ONE_MINUTE_MS,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip,
+});

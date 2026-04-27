@@ -5,6 +5,7 @@ import { useSessionStore } from '@/store/sessionStore';
 import GuestUpsellModal from '@/components/rsvp/GuestUpsellModal';
 import UserAvatar from '@/components/common/UserAvatar';
 import { useGuestUpsell } from '@/contexts/GuestUpsellContext';
+import LoginModal from '@/components/auth/LoginModal';
 
 const THEME_KEY = 'quartinho:theme';
 
@@ -21,6 +22,7 @@ export const Header: React.FC = () => {
   const role = useSessionStore((s) => s.role);
   const isAdminOrMod = role === 'admin' || role === 'moderator';
   const [dark, setDark] = useState(getInitialDark);
+  const [loginOpen, setLoginOpen] = useState(false);
   const { modalData, closeModal } = useGuestUpsell();
 
   const applyTheme = useCallback((isDark: boolean) => {
@@ -92,10 +94,19 @@ export const Header: React.FC = () => {
                   sair
                 </button>
               </>
-            ) : null}
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLoginOpen(true)}
+                className="font-body font-bold text-sm text-zine-cream border-2 border-zine-cream dark:border-zine-cream/30 px-3 py-1 hover:bg-zine-burntYellow shrink-0"
+              >
+                entrar
+              </button>
+            )}
           </nav>
         </div>
       </header>
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
       {modalData && (
         <GuestUpsellModal
           isOpen={!!modalData}

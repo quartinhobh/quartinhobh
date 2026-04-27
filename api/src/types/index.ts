@@ -386,3 +386,117 @@ export interface CommentWithUser extends Comment {
     avatarUrl: string | null;
   };
 }
+
+// ── Bares & Discos ────────────────────────────────────────────────────────
+
+export type SuggestionStatus = 'suggested' | 'liked' | 'disliked';
+
+/**
+ * BarSuggestion — public Firestore collection: barSuggestions/{id}
+ * Note: `status` is an admin-internal field. The public GET /suggestions/bars
+ * endpoint must NOT expose it in responses.
+ */
+export interface BarSuggestion {
+  id: string;
+  status: SuggestionStatus;          // admin-internal; omit from public API responses
+  suggestedByUid: string | null;     // null for anonymous
+  suggestedByEmail: string | null;   // null for anonymous
+  createdAt: number;
+  updatedAt: number;
+  name: string;
+  address: string | null;
+  instagram: string | null;
+  isClosed: boolean;
+  hasSoundSystem: boolean;
+}
+
+/** Public-safe view of a bar — omits the admin-internal status field. */
+export type PublicBarSuggestion = Omit<BarSuggestion, 'status'>;
+
+export interface AlbumSuggestion {
+  id: string;
+  status: SuggestionStatus;
+  suggestedByUid: string | null;
+  suggestedByEmail: string | null;
+  suggestionCount: number;
+  createdAt: number;
+  updatedAt: number;
+  mbid: string | null;
+  albumTitle: string | null;
+  artistName: string | null;
+  coverUrl: string | null;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
+  notes: string | null;
+  instagramLink: string | null; // legado
+}
+
+/**
+ * BarFeedback — subcollection: barFeedbacks/{barId}/userVotes/{userId}
+ * One document per user per bar. Idempotent: second vote overwrites.
+ */
+export interface BarFeedback {
+  vote: 'liked' | 'disliked';
+  createdAt: number;
+}
+
+export interface BarFeedbackCount {
+  liked: number;
+  disliked: number;
+  userVote?: 'liked' | 'disliked';  // only present when caller is authenticated
+}
+
+/**
+ * SuggestionComment — Firestore collection: suggestionComments/{commentId}
+ * Reused for both bar and album suggestions.
+ */
+export interface SuggestionComment {
+  id: string;
+  suggestionId: string;          // FK to barSuggestions or albumSuggestions
+  suggestionType: 'bar' | 'album';
+  userId: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SuggestionCommentWithUser extends SuggestionComment {
+  user: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+}
+
+// ── Payloads ──────────────────────────────────────────────────────────────
+
+export interface CreateBarSuggestionPayload {
+  name: string;
+  address?: string | null;
+  instagram?: string | null;
+  isClosed?: boolean;
+  hasSoundSystem?: boolean;
+}
+
+export interface CreateAlbumSuggestionPayload {
+  mbid?: string | null;
+  albumTitle?: string | null;
+  artistName?: string | null;
+  spotifyUrl?: string | null;
+  youtubeUrl?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdateSuggestionStatusPayload {
+  status: SuggestionStatus;
+}
+
+export interface CreateSuggestionCommentPayload {
+  suggestionId: string;
+  suggestionType: 'bar' | 'album';
+  content: string;
+}
+
+export interface PostBarFeedbackPayload {
+  vote: 'liked' | 'disliked';
+}
