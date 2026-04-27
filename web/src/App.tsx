@@ -16,6 +16,7 @@ import Footer from '@/components/layout/Footer';
 import InstallPrompt from '@/components/common/InstallPrompt';
 import UpdatePrompt from '@/components/common/UpdatePrompt';
 import StickerLayer from '@/components/common/StickerLayer';
+import { ZineWobbleFilter } from '@/components/common/ZineFrame';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { GuestUpsellProvider } from '@/contexts/GuestUpsellContext';
 
@@ -117,6 +118,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <GuestUpsellProvider>
+        <ZineWobbleFilter />
         <div className="min-h-screen flex flex-col font-body text-zine-burntOrange overflow-x-hidden">
           <Header />
           <Suspense fallback={null}><BannerDisplay /></Suspense>

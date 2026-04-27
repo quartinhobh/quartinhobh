@@ -119,6 +119,7 @@ export const AlbumSuggestionForm: React.FC<AlbumSuggestionFormProps> = ({ idToke
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="ex: Rumours, Abbey Road…"
+                style={{ filter: 'url(#zine-wobble)' }}
                 className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream placeholder:text-zine-burntOrange/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
               />
               <MbResultsList
@@ -150,6 +151,7 @@ export const AlbumSuggestionForm: React.FC<AlbumSuggestionFormProps> = ({ idToke
                   aria-invalid={validationError ? 'true' : 'false'}
                   aria-describedby={validationError ? 'album-validation-error' : undefined}
                   placeholder="https://open.spotify.com/album/..."
+                  style={{ filter: 'url(#zine-wobble)' }}
                   className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream placeholder:text-zine-burntOrange/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
                 />
               </div>
@@ -167,6 +169,7 @@ export const AlbumSuggestionForm: React.FC<AlbumSuggestionFormProps> = ({ idToke
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   placeholder="https://youtube.com/..."
+                  style={{ filter: 'url(#zine-wobble)' }}
                   className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream placeholder:text-zine-burntOrange/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
                 />
               </div>
@@ -184,6 +187,7 @@ export const AlbumSuggestionForm: React.FC<AlbumSuggestionFormProps> = ({ idToke
                   value={albumTitle}
                   onChange={(e) => setAlbumTitle(e.target.value)}
                   placeholder="ex: Rumours"
+                  style={{ filter: 'url(#zine-wobble)' }}
                   className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream placeholder:text-zine-burntOrange/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
                 />
               </div>
@@ -201,6 +205,7 @@ export const AlbumSuggestionForm: React.FC<AlbumSuggestionFormProps> = ({ idToke
                   value={artistName}
                   onChange={(e) => setArtistName(e.target.value)}
                   placeholder="ex: Fleetwood Mac"
+                  style={{ filter: 'url(#zine-wobble)' }}
                   className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream placeholder:text-zine-burntOrange/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
                 />
               </div>
@@ -248,6 +253,7 @@ export const AlbumSuggestionForm: React.FC<AlbumSuggestionFormProps> = ({ idToke
             maxLength={500}
             rows={3}
             placeholder="por que voce curte esse disco?"
+            style={{ filter: 'url(#zine-wobble)' }}
             className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream placeholder:text-zine-burntOrange/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow resize-none"
           />
         </div>

@@ -29,6 +29,7 @@ export default function NovoBar() {
           role="status"
           aria-live="polite"
           className="flex flex-col gap-3 border-2 border-zine-burntYellow p-4 bg-zine-burntYellow/10"
+          style={{ filter: 'url(#zine-wobble)' }}
         >
           <p className="font-body text-sm text-zine-burntOrange">bar indicado com sucesso!</p>
           <Button type="button" onClick={() => navigate('/bares')}>

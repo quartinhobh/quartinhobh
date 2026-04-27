@@ -3,16 +3,22 @@ import React from 'react';
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
+  /** Set to true to suppress the wobble filter on this button. */
+  noWobble?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   children,
   className = '',
+  noWobble = false,
+  style,
   ...rest
 }) => {
+  const wobbleStyle = noWobble ? style : { filter: 'url(#zine-wobble)', ...style };
   return (
     <button
       {...rest}
+      style={wobbleStyle}
       className={[
         'inline-block',
         'font-body font-bold',

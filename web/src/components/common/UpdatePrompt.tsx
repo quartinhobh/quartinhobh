@@ -28,6 +28,7 @@ export const UpdatePrompt: React.FC = () => {
     <div
       role="alert"
       className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-[640px] bg-zine-periwinkle border-4 border-zine-cream p-4 font-body text-zine-cream shadow-lg"
+      style={{ filter: 'url(#zine-wobble)' }}
     >
       <div className="flex items-center gap-3">
         <div className="flex-1">
@@ -42,6 +43,7 @@ export const UpdatePrompt: React.FC = () => {
           type="button"
           onClick={handleUpdate}
           className="bg-zine-burntYellow text-zine-cream font-bold italic px-4 py-2 border-4 border-zine-cream hover:bg-zine-burntOrange whitespace-nowrap"
+          style={{ filter: 'url(#zine-wobble)' }}
         >
           atualizar
         </button>

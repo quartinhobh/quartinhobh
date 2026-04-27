@@ -69,6 +69,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
             onChange={(e) => setName(e.target.value)}
             aria-invalid={nameError ? 'true' : 'false'}
             aria-describedby={nameError ? 'bar-name-error' : undefined}
+            style={{ filter: 'url(#zine-wobble)' }}
             className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
           />
           {nameError && (
@@ -91,6 +92,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
             value={address}
             onChange={setAddress}
             placeholder="comece a digitar o endereço…"
+            style={{ filter: 'url(#zine-wobble)' }}
             className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
           />
         </div>
@@ -104,6 +106,7 @@ export const BarSuggestionForm: React.FC<BarSuggestionFormProps> = ({ idToken, o
             type="text"
             value={instagram}
             onChange={(e) => setInstagram(e.target.value)}
+            style={{ filter: 'url(#zine-wobble)' }}
             className="w-full font-body px-3 py-2 border-2 border-zine-burntYellow bg-zine-cream dark:bg-zine-surface-dark text-zine-burntOrange dark:text-zine-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-zine-burntYellow"
           />
         </div>

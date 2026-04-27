@@ -2,11 +2,39 @@ import React from 'react';
 
 type ZineBg = 'mint' | 'periwinkle' | 'cream' | 'burntYellow';
 
+/**
+ * ZineWobbleFilter — renders the global SVG filter definition once.
+ * Mount this ONCE at the app root so any element using
+ * `filter: url(#zine-wobble)` always finds it in the document.
+ */
+export const ZineWobbleFilter: React.FC = () => (
+  <svg
+    aria-hidden="true"
+    width="0"
+    height="0"
+    style={{ position: 'absolute' }}
+  >
+    <defs>
+      <filter id="zine-wobble">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.02"
+          numOctaves="2"
+          seed="4"
+        />
+        <feDisplacementMap in="SourceGraphic" scale="3" />
+      </filter>
+    </defs>
+  </svg>
+);
+
 export interface ZineFrameProps {
   bg?: ZineBg;
   borderColor?: ZineBg;
   wobble?: boolean;
   noFilter?: boolean;
+  /** When false, removes the internal p-4 padding so content touches the border. Default true. */
+  padded?: boolean;
   className?: string;
   children: React.ReactNode;
 }
@@ -34,44 +62,26 @@ const ZineFrameBase: React.FC<ZineFrameProps> = ({
   borderColor = 'cream',
   wobble = false,
   noFilter = false,
+  padded = true,
   className = '',
   children,
 }) => {
   return (
-    <>
-      <svg
-        aria-hidden="true"
-        width="0"
-        height="0"
-        style={{ position: 'absolute' }}
-      >
-        <defs>
-          <filter id="zine-wobble">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.02"
-              numOctaves="2"
-              seed="4"
-            />
-            <feDisplacementMap in="SourceGraphic" scale="3" />
-          </filter>
-        </defs>
-      </svg>
-      <div
-        className={[
-          bgClassMap[bg],
-          borderClassMap[borderColor],
-          'border-4 p-4 relative min-w-0 max-w-full overflow-hidden',
-          wobble ? 'hover:wobble' : '',
-          className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        style={!noFilter ? { filter: 'url(#zine-wobble)' } : undefined}
-      >
-        {children}
-      </div>
-    </>
+    <div
+      className={[
+        bgClassMap[bg],
+        borderClassMap[borderColor],
+        'border-4 relative min-w-0 max-w-full overflow-hidden',
+        padded ? 'p-4' : 'p-0',
+        wobble ? 'hover:wobble' : '',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={!noFilter ? { filter: 'url(#zine-wobble)' } : undefined}
+    >
+      {children}
+    </div>
   );
 };
 
@@ -81,6 +91,15 @@ export const ZineFrame: React.FC<ZineFrameProps> = (props) => (
 
 export const ZineFrameNoWobble: React.FC<Omit<ZineFrameProps, 'noFilter'>> = (props) => (
   <ZineFrameBase {...props} noFilter />
+);
+
+/**
+ * ZineBorder — apenas a borda wobble, sem padding interno.
+ * Use quando voce quiser apenas o "papel rasgado" ao redor sem afastamento
+ * do conteudo. Equivalente a `<ZineFrame padded={false}>`.
+ */
+export const ZineBorder: React.FC<Omit<ZineFrameProps, 'padded'>> = (props) => (
+  <ZineFrameBase {...props} padded={false} />
 );
 
 export default ZineFrame;

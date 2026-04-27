@@ -59,6 +59,7 @@ export const BarFeedbackButtons: React.FC<BarFeedbackButtonsProps> = ({
           onClick={() => void handleLikeClick()}
           aria-pressed={!isAnonymous && userVote === 'liked'}
           aria-label={`curti, ${likedCount} votos`}
+          style={{ filter: 'url(#zine-wobble)' }}
           className={[
             'font-body text-sm px-3 py-2 min-h-[44px] border-2 border-zine-burntYellow',
             !isAnonymous && userVote === 'liked'
@@ -75,6 +76,7 @@ export const BarFeedbackButtons: React.FC<BarFeedbackButtonsProps> = ({
           onClick={() => void handleDislikeClick()}
           aria-pressed={!isAnonymous && userVote === 'disliked'}
           aria-label={`nao gostei, ${dislikedCount} votos`}
+          style={{ filter: 'url(#zine-wobble)' }}
           className={[
             'font-body text-sm px-3 py-2 min-h-[44px] border-2 border-zine-burntYellow',
             !isAnonymous && userVote === 'disliked'

@@ -76,6 +76,7 @@ export const InstallPrompt: React.FC = () => {
       role="dialog"
       aria-labelledby="install-prompt-title"
       className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-[640px] bg-zine-periwinkle border-4 border-zine-cream p-4 font-body text-zine-cream shadow-lg"
+      style={{ filter: 'url(#zine-wobble)' }}
     >
       <div className="flex items-start gap-3">
         <div className="flex-1">
@@ -92,6 +93,7 @@ export const InstallPrompt: React.FC = () => {
           type="button"
           onClick={accept}
           className="flex-1 bg-zine-burntYellow text-zine-cream font-bold italic px-4 py-2 border-4 border-zine-cream hover:bg-zine-burntOrange"
+          style={{ filter: 'url(#zine-wobble)' }}
         >
           bora
         </button>
@@ -99,6 +101,7 @@ export const InstallPrompt: React.FC = () => {
           type="button"
           onClick={dismiss}
           className="px-4 py-2 border-4 border-zine-cream text-zine-cream hover:bg-zine-mint hover:text-zine-burntOrange"
+          style={{ filter: 'url(#zine-wobble)' }}
         >
           agora não
         </button>

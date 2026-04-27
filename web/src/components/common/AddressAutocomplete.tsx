@@ -14,6 +14,7 @@ export interface AddressAutocompleteProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  style?: React.CSSProperties;
   countryCodes?: string;
 }
 
@@ -28,6 +29,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   onChange,
   placeholder,
   className,
+  style,
   countryCodes = 'br',
 }) => {
   const [results, setResults] = useState<NominatimResult[]>([]);
@@ -120,6 +122,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         placeholder={placeholder}
         autoComplete="off"
         className={className}
+        style={style}
       />
       {open && (loading || results.length > 0) && (
         <ul

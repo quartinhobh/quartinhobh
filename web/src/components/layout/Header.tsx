@@ -82,6 +82,7 @@ export const Header: React.FC = () => {
                   <Link
                     to="/admin"
                     className="font-body font-bold text-sm text-zine-burntYellow border-2 border-zine-burntYellow px-2 py-1 hover:bg-zine-burntYellow hover:text-zine-cream shrink-0"
+                    style={{ filter: 'url(#zine-wobble)' }}
                   >
                     admin
                   </Link>
@@ -90,6 +91,7 @@ export const Header: React.FC = () => {
                   type="button"
                   onClick={() => void signOut()}
                   className="font-body text-sm text-zine-cream border-2 border-zine-cream dark:border-zine-cream/30 px-2 py-1 hover:bg-zine-burntOrange shrink-0"
+                  style={{ filter: 'url(#zine-wobble)' }}
                 >
                   sair
                 </button>
@@ -99,6 +101,7 @@ export const Header: React.FC = () => {
                 type="button"
                 onClick={() => setLoginOpen(true)}
                 className="font-body font-bold text-sm text-zine-cream border-2 border-zine-cream dark:border-zine-cream/30 px-3 py-1 hover:bg-zine-burntYellow shrink-0"
+                style={{ filter: 'url(#zine-wobble)' }}
               >
                 entrar
               </button>

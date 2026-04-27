@@ -41,6 +41,7 @@ export const SuggestionStatusTabs: React.FC<SuggestionStatusTabsProps> = ({
             type="button"
             onClick={() => onChange(status)}
             aria-pressed={isActive}
+            style={{ filter: 'url(#zine-wobble)' }}
             className={[
               'font-body text-xs px-3 py-1.5 border-2 border-zine-burntYellow min-h-[44px]',
               isActive
