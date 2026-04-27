@@ -1,5 +1,5 @@
 import React from 'react';
-import { ZineFrameNoWobble } from '@/components/common/ZineFrame';
+import { ZineBorderDecorative } from '@/components/common/ZineFrame';
 
 export interface LyricsDisplayProps {
   lyrics: string | null;
@@ -7,15 +7,16 @@ export interface LyricsDisplayProps {
 }
 
 /**
- * LyricsDisplay — renders lyrics inside a periwinkle ZineFrame with
- * whitespace preserved. Shows "Letra não encontrada" when lyrics are null.
+ * LyricsDisplay — renders lyrics inside a periwinkle frame with wobble border
+ * but text inside is NOT wobbled (legibility). Uses ZineBorderDecorative
+ * which applies the wobble filter only to the border layer.
  */
 export const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   lyrics,
   loading = false,
 }) => {
   return (
-    <ZineFrameNoWobble bg="periwinkle">
+    <ZineBorderDecorative bg="periwinkle" borderColor="periwinkle">
       {loading ? (
         <p className="font-body text-zine-cream opacity-70">
           Carregando letra...
@@ -31,7 +32,7 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
       ) : (
         <p className="font-body text-zine-cream">Letra não encontrada</p>
       )}
-    </ZineFrameNoWobble>
+    </ZineBorderDecorative>
   );
 };
 
