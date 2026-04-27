@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ZineFrame from '@/components/common/ZineFrame';
 import Button from '@/components/common/Button';
 import BarFeedbackButtons from '@/components/bares/BarFeedbackButtons';
 import { STATUS_DISPLAY } from '@/types';
@@ -75,58 +76,60 @@ export const BarCard: React.FC<BarCardProps> = ({
   );
 
   return (
-    <article className={`flex flex-col gap-3 ${asDetail ? '' : 'pb-4 border-b-2 border-zine-burntYellow/30'}`}>
-      {cardContent}
+    <ZineFrame bg="cream">
+      <div className="flex flex-col gap-3">
+        {cardContent}
 
-      {!onMoveStatus && (
-        <BarFeedbackButtons
-          barId={bar.id}
-          idToken={idToken}
-          firebaseUid={firebaseUid}
-          onRequestLogin={onRequestLogin}
-          trailingAction={
-            !asDetail && (
-              <Link
-                to={`/bar/${bar.id}`}
-                className="font-body text-sm font-bold text-zine-burntOrange underline hover:text-zine-burntOrange/70 min-h-[44px] flex items-center"
-              >
-                ver comentários →
-              </Link>
-            )
-          }
-        />
-      )}
+        {!onMoveStatus && (
+          <BarFeedbackButtons
+            barId={bar.id}
+            idToken={idToken}
+            firebaseUid={firebaseUid}
+            onRequestLogin={onRequestLogin}
+            trailingAction={
+              !asDetail && (
+                <Link
+                  to={`/bar/${bar.id}`}
+                  className="font-body text-sm font-bold text-zine-burntOrange underline hover:text-zine-burntOrange/70 min-h-[44px] flex items-center"
+                >
+                  ver comentários →
+                </Link>
+              )
+            }
+          />
+        )}
 
-      {onMoveStatus && (
-        <div className="flex flex-col gap-2 border-t-2 border-zine-burntYellow/30 pt-2">
-          <span className="font-body text-xs text-zine-burntOrange/70 italic">
-            mover para (curadoria do admin):
-          </span>
-          <div className="flex gap-2 flex-wrap">
-            {STATUS_LABELS.map((status) => (
-              <Button
-                key={status}
-                type="button"
-                onClick={() => onMoveStatus(bar.id, status)}
-                className="text-xs min-h-[44px]"
-              >
-                {STATUS_DISPLAY[status]}
-              </Button>
-            ))}
+        {onMoveStatus && (
+          <div className="flex flex-col gap-2 border-t-2 border-zine-burntYellow/30 pt-2">
+            <span className="font-body text-xs text-zine-burntOrange/70 italic">
+              mover para (curadoria do admin):
+            </span>
+            <div className="flex gap-2 flex-wrap">
+              {STATUS_LABELS.map((status) => (
+                <Button
+                  key={status}
+                  type="button"
+                  onClick={() => onMoveStatus(bar.id, status)}
+                  className="text-xs min-h-[44px]"
+                >
+                  {STATUS_DISPLAY[status]}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {onDelete && (
-        <Button
-          type="button"
-          onClick={() => onDelete(bar.id)}
-          className="text-xs min-h-[44px]"
-        >
-          apagar
-        </Button>
-      )}
-    </article>
+        {onDelete && (
+          <Button
+            type="button"
+            onClick={() => onDelete(bar.id)}
+            className="text-xs min-h-[44px]"
+          >
+            apagar
+          </Button>
+        )}
+      </div>
+    </ZineFrame>
   );
 };
 
